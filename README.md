@@ -184,7 +184,7 @@ See [NOTICE](NOTICE) for information about third-party code and modifications.
 ## Reference
 
 ```
-@misc{XXXX.XXXX,
+@misc{takahashi_ishihara_fastmia,
   Author = {Hiromu Takahashi and Shotaro Ishihara},
   Title = {{Fast-MIA}: Efficient and Scalable Membership Inference for LLMs},
   Year = {2025},
