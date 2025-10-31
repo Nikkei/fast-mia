@@ -1,0 +1,31 @@
+# Model settings
+model:
+  model_id: "facebook/opt-125m"
+
+# Sampling parameters
+sampling_parameters:
+  temperature: 0.0
+  top_p: 1.0
+  prompt_logprobs: 0
+  max_tokens: 1
+
+# Data settings
+data:
+  data_path: "./data/test_data.csv"
+  format: "csv"
+  text_column: "text"
+  label_column: "label"
+  token_length: 64
+
+# Evaluation methods
+methods:
+  - type: "loss"
+    params: {}
+  - type: "zlib"
+    params: {}
+  - type: "mink"
+    params:
+      k_percent: 10
+
+# Output settings
+output_dir: "./results" 

@@ -1,0 +1,9 @@
+Fast-MIA
+Copyright (c) 2025 Nikkei Inc.
+
+The following files contain modifications of original MIT or Apache 2.0 licensed code:
+- src/methods/mink.py: Modified from [detect-pretrain-code](https://github.com/swj0419/detect-pretrain-code) to support vLLM
+- src/methods/pac.py: Modified from [PAC](https://github.com/yyy01/PAC) to support vLLM
+- src/methods/recall.py: Modified from [recall](https://github.com/ruoyuxie/recall) to support vLLM
+- src/methods/conrecall.py: Modified from [CON-RECALL](https://github.com/WangCheng0116/CON-RECALL) to support vLLM
+- src/methods/samia.py: Modified from [samia](https://github.com/nlp-titech/samia) to support vLLM

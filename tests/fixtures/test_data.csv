@@ -1,0 +1,5 @@
+text,label
+This is a sample text.,1
+This is another sample text.,0
+Here is also a sample text.,1
+This is a longer sample text. There are many words. This is used for the split test.,0 

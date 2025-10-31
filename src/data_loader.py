@@ -1,0 +1,235 @@
+# Copyright (c) 2025 Nikkei Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import logging
+from pathlib import Path
+
+import pandas as pd
+from datasets import load_dataset
+
+
+class DataLoader:
+    """Data loader class"""
+
+    # Allowed file extensions
+    ALLOWED_EXTENSIONS = {".csv", ".json", ".jsonl", ".parquet"}
+
+    def __init__(
+        self,
+        data_path: str | Path | None = None,
+        data_format: str = "csv",
+        text_column: str = "text",
+        label_column: str = "label",
+    ) -> None:
+        """Initialize the data loader
+
+        Args:
+            data_path: Path to the data (file or directory, or dataset name for huggingface format)
+            data_format: Data format ("csv", "jsonl", "json", "parquet", "huggingface")
+            text_column: Name of the text column
+            label_column: Name of the label column
+        """
+        self.text_column = text_column
+        self.label_column = label_column
+        self.data = None
+
+        # Load data (only if data_path is specified)
+        if data_path is not None:
+            logging.info(
+                f"Loading data (data_path={data_path}, data_format={data_format})..."
+            )
+            self.data = self._load_data(data_path, data_format)
+
+    def _load_data(
+        self, data_path: str | Path | None, data_format: str
+    ) -> pd.DataFrame:
+        """Load data
+
+        Args:
+            data_path: Path to the data (dataset name for huggingface format)
+            data_format: Data format
+
+        Returns:
+            DataFrame
+        """
+        if data_format == "huggingface":
+            if not data_path:
+                raise ValueError(
+                    "data_path must be provided for huggingface format (as dataset name)"
+                )
+            # Load from Hugging Face Datasets
+            dataset = load_dataset(str(data_path))
+            split_name = list(dataset.keys())[0]
+            return dataset[split_name].to_pandas()
+
+        if not data_path:
+            raise ValueError("data_path must be provided")
+
+        data_path = Path(data_path)
+
+        # Validate file extension
+        self._validate_file_extension(data_path)
+
+        if data_format == "csv":
+            return pd.read_csv(data_path)
+        elif data_format == "jsonl":
+            return pd.read_json(data_path, lines=True)
+        elif data_format == "json":
+            return pd.read_json(data_path)
+        elif data_format == "parquet":
+            return pd.read_parquet(data_path)
+        else:
+            raise ValueError(f"Unsupported data format: {data_format}")
+
+    def get_data(self, token_length: int | None = None) -> tuple[list[str], list[int]]:
+        """Get data
+
+        Args:
+            token_length: Number of words to split (if None, no split)
+
+        Returns:
+            texts: List of texts
+            labels: List of labels
+        """
+        if self.data is None:
+            raise ValueError(
+                "Data is not loaded. Please call load_data() or load_wikimia()."
+            )
+
+        if token_length:
+            # Split by number of words
+            texts = []
+            labels = []
+
+            for _, row in self.data.iterrows():
+                text = row[self.text_column]
+                label = row[self.label_column]
+
+                texts.append(" ".join(text.split()[:token_length]))
+                labels.append(label)
+
+            return texts, labels
+
+        else:
+            # No split
+            texts = self.data[self.text_column].tolist()
+            labels = self.data[self.label_column].tolist()
+
+            return texts, labels
+
+    @staticmethod
+    def load_wikimia(token_length: int) -> "DataLoader":
+        """Load WikiMIA dataset with specified token length
+
+        Args:
+            token_length: Token length (one of 32, 64, 128, 256)
+
+        Returns:
+            DataLoader instance
+        """
+        logging.info(f"Loading WikiMIA dataset (token_length={token_length})...")
+        dataset = load_dataset("swj0419/WikiMIA", split=f"WikiMIA_length{token_length}")
+        df = dataset.to_pandas()
+
+        # Initialize DataLoader without loading data
+        loader = DataLoader(data_path=None, data_format=None)
+        loader.data = df
+        loader.text_column = "input"
+        loader.label_column = "label"
+
+        return loader
+
+    @staticmethod
+    def load_mimir(data_path: str, token: str) -> "DataLoader":
+        """Load Mimir dataset with specified token length
+
+        Args:
+            data_path: Path to the data (dataset name for huggingface format)
+            token: Hugging Face token
+
+        Returns:
+            DataLoader instance
+        """
+        mimir_domains = {
+            "ax": "arxiv",
+            "dm": "dm_mathematics",
+            "gh": "github",
+            "hn": "hackernews",
+            "pc": "pile_cc",
+            "pm": "pubmed_central",
+            "we": "wikipedia_(en)",
+            "fp": "full_pile",
+            "c4": "c4",
+            "ta": "temporal_arxiv",
+            "tw": "temporal_wiki",
+        }
+        mimir_ngrams = {
+            "702": "ngram_7_0.2",
+            "1302": "ngram_13_0.2",
+            "1308": "ngram_13_0.8",
+            "none": "none",
+        }
+
+        elements = data_path.split("_")
+        assert len(elements) == 3, (
+            "Mimir dataset path must be in the format of 'iamgroot42/mimir_pc_702'"
+        )
+        assert elements[1] in mimir_domains, (
+            "Mimir dataset domain must be one of 'ax', 'dm', 'gh', 'hn', 'pc', 'pm', 'we', 'fp', 'c4', 'ta', 'tw'"
+        )
+        assert elements[2] in mimir_ngrams, (
+            "Mimir dataset ngram must be one of '702', '1302', '1308', 'none'"
+        )
+        dataset_name = elements[0]
+        domain = mimir_domains[elements[1]]
+        ngram = mimir_ngrams[elements[2]]
+
+        logging.info(
+            f"Loading Mimir dataset (dataset_name={dataset_name}, domain={domain}, ngram={ngram})..."
+        )
+        dataset = load_dataset(
+            dataset_name, domain, split=ngram, token=token, trust_remote_code=True
+        )
+        member_texts = dataset["member"]
+        nonmember_texts = dataset["nonmember"]
+        df = pd.DataFrame(
+            {
+                "input": member_texts + nonmember_texts,
+                "label": [1] * len(member_texts) + [0] * len(nonmember_texts),
+            }
+        )
+
+        # Initialize DataLoader without loading data
+        loader = DataLoader(data_path=None, data_format=None)
+        loader.data = df
+        loader.text_column = "input"
+        loader.label_column = "label"
+
+        return loader
+
+    def _validate_file_extension(self, data_path: Path) -> None:
+        """Validate file extension
+
+        Args:
+            data_path: Path to the file to validate
+
+        Raises:
+            ValueError: Unsupported file extension
+        """
+        file_extension = data_path.suffix.lower()
+        if file_extension not in self.ALLOWED_EXTENSIONS:
+            raise ValueError(
+                f"Unsupported file extension: {file_extension}. "
+                f"Allowed extensions are: {', '.join(sorted(self.ALLOWED_EXTENSIONS))}"
+            )

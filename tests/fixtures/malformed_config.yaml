@@ -1,0 +1,9 @@
+# This is a malformed YAML file (incorrect indentation)
+model:
+model_id: "facebook/opt-125m"  # This line is not properly indented
+  temperature: 0.0
+
+data:
+  data_path: "./data/test_data.csv"
+  format: "csv
+  text_column: "text"  # There are also lines without closing quotes 

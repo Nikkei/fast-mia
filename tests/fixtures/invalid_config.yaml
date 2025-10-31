@@ -1,0 +1,14 @@
+# Data settings exist, but model settings are missing
+data:
+  data_path: "./data/test_data.csv"
+  format: "csv"
+  text_column: "text"
+  label_column: "label"
+
+# Evaluation methods
+methods:
+  - type: "loss"
+    params: {}
+
+# Output settings
+output_dir: "./results" 

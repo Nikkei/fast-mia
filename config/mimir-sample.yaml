@@ -1,0 +1,79 @@
+# Model settings
+model:
+  model_id: "Qwen/Qwen2.5-0.5B-Instruct"
+  trust_remote_code: true
+  max_seq_len_to_capture: 100
+  max_num_seqs: 1
+
+# LoRA settings (optional)
+# Set only if you want to use a specific LoRA adapter
+# lora:
+#   name: "adapter_name"
+#   id: 1
+#   path: "adapter_path"
+
+# sampling_parameters settings
+sampling_parameters:
+  max_tokens: 1
+  prompt_logprobs: 0
+  temperature: 0.0
+  top_p: 1.0
+
+# Data settings
+data:
+  # Basic settings
+  data_path: "iamgroot42/mimir_pc_702"  # Path to data file "{dataset_name}_{domain}_{ngram}"
+  format: "huggingface"                 # Data format (csv, jsonl, json, parquet, huggingface)
+
+  # Column name settings
+  text_column: "input"               # Name of text column
+  label_column: "label"              # Name of label column
+
+  # text split settings
+  token_length: 200                   # must be 200 for mimir dataset
+
+  # Language
+  space_delimited_language: true
+
+# Evaluation methods
+methods:
+  - type: "loss"
+    params: {}
+  # - type: "lower"
+  #   params: {}
+  # - type: "zlib"
+  #   params: {}
+  # - type: "mink"
+  #   params:
+  #     ratio: 0.1
+  # - type: "mink"
+  #   params:
+  #     ratio: 0.2
+  # - type: "mink"
+  #   params:
+  #     ratio: 0.3
+  # - type: "mink"
+  #   params:
+  #     ratio: 0.5
+  # - type: "mink"
+  #   params:
+  #     ratio: 0.8
+  # - type: "mink"
+  #   params:
+  #     ratio: 1.0
+  # - type: "recall"
+  #   params:
+  #     num_shots: 3
+  #     pass_window: false
+  # - type: "pac"
+  #   params:
+  #     alpha: 0.3
+  #     N: 5
+  # - type: "samia"
+  #   params:
+  #     num_samples: 5
+  #     prefix_ratio: 0.5
+  #     zlib: true
+
+# Output settings
+output_dir: "./results" 
