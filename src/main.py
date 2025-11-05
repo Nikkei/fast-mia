@@ -15,15 +15,9 @@
 import argparse
 import logging
 import os
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-
-# Add vllm directory to path (if not already added)
-vllm_path = str((Path(__file__).parent.parent / "vllm").resolve())
-if vllm_path not in sys.path:
-    sys.path.insert(0, vllm_path)
 
 # Import required modules
 from .config import Config

@@ -12,14 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-from pathlib import Path
 from typing import Any
-
-# Add vllm directory to path (if not already added)
-vllm_path = str((Path(__file__).parent.parent / "vllm").resolve())
-if vllm_path not in sys.path:
-    sys.path.insert(0, vllm_path)
 
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
