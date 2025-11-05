@@ -15,12 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-from pathlib import Path
-
-# Add vllm directory to path
-sys.path.insert(0, str(Path("./vllm").resolve()))
-
 from src.main import main
 
 if __name__ == "__main__":
