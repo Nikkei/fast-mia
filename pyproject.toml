@@ -83,4 +83,4 @@ pythonpath = "src"
 testpaths = ["tests"]
 
 [tool.coverage.run]
-omit = ["*/__init__.py"]
+omit = ["*/__init__.py", "*/conftest.py"]

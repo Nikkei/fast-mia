@@ -147,18 +147,12 @@ class TestDataLoader:
     @mock.patch("src.data_loader.load_dataset")
     def test_load_huggingface(self, mock_load_dataset):
         """Test loading data from Hugging Face Datasets"""
-        # Create a mock dataset
-        mock_dataset = {
-            "train": Dataset.from_dict(
-                {"text": ["This is a Hugging Face sample text."], "label": [1]}
-            )
-        }
-        # Create a mock object with to_pandas method
-        mock_dataset["train"].to_pandas = mock.MagicMock(
-            return_value=pd.DataFrame(
-                {"text": ["This is a Hugging Face sample text."], "label": [1]}
-            )
+        # Create a mock dataset without using Dataset.from_dict()
+        mock_train_split = mock.MagicMock()
+        mock_train_split.to_pandas.return_value = pd.DataFrame(
+            {"text": ["This is a Hugging Face sample text."], "label": [1]}
         )
+        mock_dataset = {"train": mock_train_split}
         mock_load_dataset.return_value = mock_dataset
 
         # Create a data loader
@@ -182,15 +176,10 @@ class TestDataLoader:
     @mock.patch("src.data_loader.load_dataset")
     def test_load_wikimia(self, mock_load_dataset):
         """Test loading data from WikiMIA dataset"""
-        # Create a mock dataset
-        mock_dataset = Dataset.from_dict(
+        # Create a mock dataset without using Dataset.from_dict()
+        mock_dataset = mock.MagicMock()
+        mock_dataset.to_pandas.return_value = pd.DataFrame(
             {"input": ["This is a WikiMIA sample text."], "label": [1]}
-        )
-        # Mock to_pandas method
-        mock_dataset.to_pandas = mock.MagicMock(
-            return_value=pd.DataFrame(
-                {"input": ["This is a WikiMIA sample text."], "label": [1]}
-            )
         )
         mock_load_dataset.return_value = mock_dataset
 
@@ -217,22 +206,12 @@ class TestDataLoader:
     @mock.patch("src.data_loader.load_dataset")
     def test_load_mimir(self, mock_load_dataset):
         """Test loading data from Mimir dataset"""
-        # Create a mock dataset
-        mock_dataset = Dataset.from_dict(
-            {
-                "member": ["This is a Mimir sample text."],
-                "nonmember": ["This is a Mimir sample text."],
-            }
-        )
-        # Mock to_pandas method
-        mock_dataset.to_pandas = mock.MagicMock(
-            return_value=pd.DataFrame(
-                {
-                    "member": ["This is a Mimir sample text."],
-                    "nonmember": ["This is a Mimir sample text."],
-                }
-            )
-        )
+        # Create a mock dataset without using Dataset.from_dict()
+        # Mimir dataset uses direct dictionary access: dataset["member"] and dataset["nonmember"]
+        mock_dataset = {
+            "member": ["This is a Mimir sample text."],
+            "nonmember": ["This is a Mimir sample text."],
+        }
         mock_load_dataset.return_value = mock_dataset
         
         # Load Mimir dataset
