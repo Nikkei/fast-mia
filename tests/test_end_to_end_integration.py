@@ -1,9 +1,9 @@
 import tempfile
 from pathlib import Path
 import shutil
-import os
 import pandas as pd
 import pytest
+from unittest import mock
 
 from src.config import Config
 from src.data_loader import DataLoader
@@ -12,13 +12,43 @@ from src.methods.factory import MethodFactory
 from src.evaluator import Evaluator
 
 class TestEndToEndIntegration:
-    def test_end_to_end_all(self):
+    @mock.patch("src.model_loader.SamplingParams")
+    @mock.patch("src.model_loader.LLM")
+    def test_end_to_end_all(self, mock_llm, mock_sampling_params):
         """
         End-to-end test: Verify the entire process from config file loading, data loading, model loading, method creation, evaluation, to result output and saving
         - Verify config values, number of methods, and contents
         - Run evaluation and check DataFrame
         - Verify result file saving, contents, and overwrite
         """
+        # Mock setup for vllm
+        mock_tokenizer = mock.MagicMock()
+        mock_tokenizer.eos_token = "</s>"
+        mock_llm_instance = mock_llm.return_value
+        mock_llm_instance.get_tokenizer.return_value = mock_tokenizer
+        
+        # Mock sampling params
+        mock_sampling_params_instance = mock.MagicMock()
+        mock_sampling_params.return_value = mock_sampling_params_instance
+        
+        # Mock generate method to return dummy outputs with proper structure
+        def create_mock_output(text):
+            mock_output = mock.MagicMock()
+            mock_output.prompt = text
+            # Create mock logprobs structure
+            mock_logprob = mock.MagicMock()
+            mock_logprob.logprob = -0.5
+            mock_output.prompt_logprobs = [
+                {0: mock_logprob} for _ in range(len(text.split()))
+            ]
+            return mock_output
+        
+        # Mock generate to return appropriate outputs based on input
+        def mock_generate(texts, *args, **kwargs):
+            return [create_mock_output(text) for text in texts]
+        
+        mock_llm_instance.generate.side_effect = mock_generate
+        
         with tempfile.TemporaryDirectory() as temp_dir:
             # Prepare config and data files
             config_src = Path(__file__).parent / "fixtures" / "valid_config.yaml"

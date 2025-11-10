@@ -55,8 +55,9 @@ class TestDataLoaderIntegration:
         # Temporarily set environment variable (if needed)
         monkeypatch.setenv("PYTHONPATH", ".")
 
-        # Create mock dataset
-        mock_dataset = Dataset.from_dict(
+        # Create mock dataset without using Dataset.from_dict()
+        mock_dataset = mock.MagicMock()
+        mock_dataset.to_pandas.return_value = pd.DataFrame(
             {
                 "input": [
                     "This is a WikiMIA integration test sample.",
@@ -64,17 +65,6 @@ class TestDataLoaderIntegration:
                 ],
                 "label": [1, 0],
             }
-        )
-        mock_dataset.to_pandas = mock.MagicMock(
-            return_value=pd.DataFrame(
-                {
-                    "input": [
-                        "This is a WikiMIA integration test sample.",
-                        "Another WikiMIA sample sentence.",
-                    ],
-                    "label": [1, 0],
-                }
-            )
         )
         mock_load_dataset.return_value = mock_dataset
 
@@ -97,29 +87,15 @@ class TestDataLoaderIntegration:
     @mock.patch("src.data_loader.load_dataset")
     def test_huggingface_integration(self, mock_load_dataset):
         """Integration test for loading data from Hugging Face Datasets"""
-        # Create mock dataset
-        mock_dataset = DatasetDict(
+        # Create mock dataset without using Dataset.from_dict() or DatasetDict
+        mock_train_split = mock.MagicMock()
+        mock_train_split.to_pandas.return_value = pd.DataFrame(
             {
-                "train": Dataset.from_dict(
-                    {
-                        "text": ["This is a Hugging Face integration test sample."],
-                        "label": [1],
-                    }
-                ),
-                "test": Dataset.from_dict(
-                    {"text": ["This is a test sample."], "label": [0]}
-                ),
+                "text": ["This is a Hugging Face integration test sample."],
+                "label": [1],
             }
         )
-        # Mock to_pandas method
-        mock_dataset["train"].to_pandas = mock.MagicMock(
-            return_value=pd.DataFrame(
-                {
-                    "text": ["This is a Hugging Face integration test sample."],
-                    "label": [1],
-                }
-            )
-        )
+        mock_dataset = {"train": mock_train_split}
         mock_load_dataset.return_value = mock_dataset
 
         # Create data loader

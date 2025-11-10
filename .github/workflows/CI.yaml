@@ -41,3 +41,6 @@ jobs:
 
       - name: Ruff Check
         run: uv run ruff check --fix --config pyproject.toml
+
+      - name: Run tests
+        run: uv run pytest --cov tests -v
