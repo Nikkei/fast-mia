@@ -61,3 +61,15 @@ Fast-MIA supports the following MIA methods:
 ## 📝 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/Nikkei/fast-mia/blob/main/LICENSE) file for details.
+
+## 📑 Reference
+
+```
+@misc{takahashi_ishihara_fastmia,
+  Author = {Hiromu Takahashi and Shotaro Ishihara},
+  Title = {{Fast-MIA}: Efficient and Scalable Membership Inference for LLMs},
+  Year = {2025},
+  Eprint = {arXiv:2510.23074},
+  URL = {https://arxiv.org/abs/2510.23074}
+}
+```
