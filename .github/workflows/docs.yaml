@@ -2,6 +2,7 @@ name: Docs
 permissions:
   contents: write
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -34,4 +35,4 @@ jobs:
         run: uv sync --only-dev
 
       - name: Deploy documentation
-        run: uv run mkdocs gh-deploy --force
+        run: cd docs && uv run mkdocs gh-deploy --force
