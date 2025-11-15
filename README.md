@@ -1,6 +1,15 @@
-# Fast-MIA
+<h1 align="center">Fast-MIA</h1>
 
-A framework for efficiently evaluating Membership Inference Attacks (MIA) against Large Language Models (LLMs). This tool enables fast execution of representative membership inference methods using vLLM.
+<h3 align="center">
+A framework for efficiently evaluating Membership Inference Attacks (MIA) against Large Language Models (LLMs). 
+
+This tool enables fast execution of representative membership inference methods using vLLM.
+</h3>
+
+<p align="center">
+  | <a href="https://nikkei.github.io/fast-mia/">Documentation</a> | <a href="https://arxiv.org/abs/2510.23074">Paper</a> |
+</p>
+
 
 ## Features
 
@@ -62,87 +71,7 @@ uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
 uv run --with 'vllm==0.10.2' python main.py --config config/your_own_configuration.yaml
 ```
 
-### Parameters
-
-- `--config`: Path to the configuration file (required)
-- `--seed`: Random seed (default: 42)
-- `--max-cache-size`: Maximum cache size (default: 1000)
-
-### Configuration File
-
-The configuration file is in YAML format and includes the following elements:
-
-```yaml
-# Model settings
-model:
-  model_id: "Model ID"
-  # Other model parameters...
-  # trust_remote_code=true is assumed
-
-# LoRA settings (optional)
-lora:
-  name: "adapter_name"
-  id: 1
-  path: "adapter_path"
-
-# Data settings
-data:
-  # Basic settings
-  data_path: "./data/sample_data.csv"  # Path to data file (for Hugging Face datasets, use dataset name)
-  format: "csv"                        # Data format (csv, jsonl, json, parquet, huggingface)
-  
-  # For using the WikiMIA dataset
-  # data_path: "swj0419/WikiMIA"      # WikiMIA dataset name
-  # format: "huggingface"             # Specify huggingface format
-
-  # Column names
-  text_column: "text"                # Name of the text column
-  label_column: "label"              # Name of the label column
-
-  # Token length setting
-  token_length: 64                   # Number of tokens to use (for WikiMIA: 32, 64, 128, or 256)
-
-  # Whether the language is space-delimited
-  space_delimited_language: true
-
-# Evaluation methods
-methods:
-  - type: "loss"
-    params: {}
-  # Other methods...
-
-# Output settings
-output_dir: "./results"
-```
-
-### Data Requirements
-
-This supports various data formats.
-For each format, the file of `data_path` is expected to be read as follows:
-
-- "csv": `pd.read_csv(data_path)`
-- "jsonl": `pandas.read_json(data_path, lines=True)`
-- "json": `pd.read_json(data_path)`
-- "parquet": `pandas.read_parquet(data_path)`
-- "huggingface": `load_dataset.load_dataset(data_path)`
-
-The data must contain at least the following columns (column names can be changed as long as they match those specified in the YAML):
-
-- **text**: The text to be evaluated
-- **label**: Membership label (1: member, 0: non-member)
-
-For well-known benchmark datasets, dedicated specification options are provided:
-
-- The [WikiMIA](https://huggingface.co/datasets/swj0419/WikiMIA) dataset is handled specially. If you set `data_path` to "swj0419/WikiMIA", it will be automatically recognized. For this dataset, the data corresponding to the specified token length (32, 64, 128, or 256) will be automatically loaded (e.g., "WikiMIA_length64").
-- The [MIMIR](https://huggingface.co/datasets/iamgroot42/mimir) dataset is handled specially too. If you set `data_path` to "iamgroot42/mimir_{domain}_{ngram}", it will be automatically recognized. For this dataset, the data corresponding to the specified domain and ngram will be automatically loaded (e.g., "iamgroot42/mimir", "pile_cc", "ngram_7_0.2").
-
-**Note**: To use the MIMIR dataset, you need to create a `.env` file in the project root directory with your Hugging Face token. Create a `.env` file with the following content:
-
-```
-HUGGINGFACE_TOKEN=your_huggingface_token_here
-```
-
-Replace `your_huggingface_token_here` with your actual Hugging Face token. You can obtain a token from [Hugging Face Settings](https://huggingface.co/settings/tokens).
+Please visit our [How to Use](https://nikkei.github.io/fast-mia/how-to-use/) to learn more.
 
 ## Performance Comparison
 
