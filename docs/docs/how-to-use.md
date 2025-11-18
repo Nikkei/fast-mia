@@ -70,14 +70,14 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 
 ### `data` Block
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `data_path` | ✅ | Path to a local file or Hugging Face dataset name (e.g., `swj0419/WikiMIA`). |
-| `format` | ❌ | One of `csv`, `jsonl`, `json`, `parquet`, or `huggingface`. |
-| `text_column` | ❌ | Column containing the raw text to probe. |
-| `label_column` | ❌ | Column containing membership labels (`1` = member, `0` = non-member). |
-| `token_length` | ❌ | Number of tokens kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
-| `space_delimited_language` | ❌ | Set to `false` for languages without whitespace like Japanese. |
+| Field | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `data_path` | ✅ | – | Path to a local file or Hugging Face dataset name (e.g., `swj0419/WikiMIA`). |
+| `format` | ❌ | `csv` | One of `csv`, `jsonl`, `json`, `parquet`, or `huggingface`. |
+| `text_column` | ❌ | `text` | Column containing the raw text to probe. |
+| `label_column` | ❌ | `label` | Column containing membership labels (`1` = member, `0` = non-member). |
+| `token_length` | ❌ | `32` | Number of tokens kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
+| `space_delimited_language` | ❌ | `true` | Set to `false` for languages without whitespace like Japanese. |
 
 **Note**: If `space_delimited_language` is `false`, you must pre-tokenize your text and insert spaces between tokens beforehand; Fast-MIA assumes the input is already space-separated and will simply strip the spaces back out during scoring.
 
@@ -124,7 +124,7 @@ Available method types and their parameters:
 | `mink` | https://github.com/swj0419/detect-pretrain-code | `ratio` (`0.0–1.0`, default `0.5`). |
 | `pac` | https://github.com/yyy01/PAC | `alpha` (augmentation strength, default `0.3`), `N` (augmentations per sample, default `5`). |
 | `recall` | https://github.com/ruoyuxie/recall | `num_shots` (number of prefix texts, default `10`), `pass_window` (skip max-length trimming, default `False`). |
-| `conrecall` | https://github.com/WangCheng0116/CON-RECALL | Same as `recall` plus `gamma` (ratio of member prefixs loss, default `0.5`). |
+| `conrecall` | https://github.com/WangCheng0116/CON-RECALL | Same as `recall` plus `gamma` (ratio of member prefixes loss, default `0.5`). |
 | `samia` | https://github.com/nlp-titech/samia | `num_samples` (number of samples, default `5`), `prefix_ratio` (ratio of prefix, default `0.5`), `zlib` (Use Zlib, default `True`). |
 
 ### `output_dir`
