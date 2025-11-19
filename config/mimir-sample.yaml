@@ -8,9 +8,9 @@ model:
 # LoRA settings (optional)
 # Set only if you want to use a specific LoRA adapter
 # lora:
-#   name: "adapter_name"
-#   id: 1
-#   path: "adapter_path"
+#   lora_name: "adapter_name"
+#   lora_int_id: 1
+#   lora_path: "adapter_path"
 
 # sampling_parameters settings
 sampling_parameters:
