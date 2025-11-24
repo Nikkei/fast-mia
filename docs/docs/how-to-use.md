@@ -68,6 +68,8 @@ Values are passed to `vllm.lora.request.LoRARequest`. Select params following th
 
 Omit the entire block if you evaluate the base model. When enabled, the adapter is transparently applied to all methods.
 
+**Note**: If you enable LoRA, there is a known prompt-logprob bug (https://discuss.vllm.ai/t/bug-wrong-lora-mapping-during-prompt-logprobs-computing/500/2). Setting `sampling_parameters.prompt_logprobs` currently raises an error, so methods like `loss` or `mink` cannot run.
+
 ### `data` Block
 
 | Field | Required | Default | Description |
