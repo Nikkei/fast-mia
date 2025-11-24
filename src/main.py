@@ -15,6 +15,8 @@
 import argparse
 import logging
 import os
+import shutil
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -39,6 +41,7 @@ def main() -> None:
         "--max-cache-size", type=int, default=1000, help="Maximum cache size"
     )
     args = parser.parse_args()
+    start_time = datetime.now()
 
     # Log settings
     logging.basicConfig(
@@ -107,13 +110,16 @@ def main() -> None:
     output_dir = Path(config.config.get("output_dir", "./results"))
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    filename_parts = ["results"]
-    if token_length:
-        filename_parts.append(f"token{token_length}")
+    run_dir = output_dir / start_time.strftime("%Y%m%d-%H%M%S")
+    run_dir.mkdir(parents=True, exist_ok=False)
 
-    output_path = output_dir / f"{'-'.join(filename_parts)}.csv"
+    output_path = run_dir / "results.csv"
     results.to_csv(output_path, index=False)
     logging.info(f"Results saved to {output_path}")
+
+    config_copy_path = run_dir / "config.yaml"
+    shutil.copy(config.config_path, config_copy_path)
+    logging.info(f"Config copied to {config_copy_path}")
 
 
 if __name__ == "__main__":
