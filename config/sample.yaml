@@ -4,7 +4,6 @@ model:
   trust_remote_code: true
   max_seq_len_to_capture: 100
   max_num_seqs: 1
-  max_num_batched_tokens: 32768
 
 # LoRA settings (optional)
 # Set only if you want to use a specific LoRA adapter
@@ -75,11 +74,11 @@ methods:
     params:
       alpha: 0.3
       N: 5
-  # - type: "samia"
-  #   params:
-  #     num_samples: 5
-  #     prefix_ratio: 0.5
-  #     zlib: true
+  - type: "samia"
+    params:
+      num_samples: 5
+      prefix_ratio: 0.5
+      zlib: true
 
 # Output settings
 output_dir: "./results" 
