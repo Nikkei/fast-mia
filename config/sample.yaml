@@ -4,9 +4,11 @@ model:
   trust_remote_code: true
   max_seq_len_to_capture: 100
   max_num_seqs: 1
+  enable_lora: false # Set to true to enable LoRA adapters
 
 # LoRA settings (optional)
 # Set only if you want to use a specific LoRA adapter
+# Note: If you enable LoRA, there is a known prompt-logprob bug (https://discuss.vllm.ai/t/bug-wrong-lora-mapping-during-prompt-logprobs-computing/500/2).
 # lora:
 #   lora_name: "adapter_name"
 #   lora_int_id: 1

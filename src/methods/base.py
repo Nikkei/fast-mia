@@ -88,7 +88,7 @@ class BaseMethod(ABC):
         # If LoRA request exists, add its ID and name
         lora_str = ""
         if lora_request:
-            lora_str = f"_{lora_request.lora_id}_{lora_request.lora_name}"
+            lora_str = f"_{lora_request.lora_int_id}_{lora_request.lora_name}"
 
         return f"{texts_hash}_{params_str}{lora_str}"
 
