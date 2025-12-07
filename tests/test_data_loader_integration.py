@@ -69,8 +69,8 @@ class TestDataLoaderIntegration:
         mock_load_dataset.return_value = mock_dataset
 
         # Load WikiMIA dataset
-        token_length = 64
-        data_loader = DataLoader.load_wikimia(token_length)
+        text_length = 64
+        data_loader = DataLoader.load_wikimia(text_length)
 
         # Get and verify data
         texts, labels = data_loader.get_data()
@@ -81,7 +81,7 @@ class TestDataLoaderIntegration:
 
         # Verify correct parameters were called
         mock_load_dataset.assert_called_once_with(
-            "swj0419/WikiMIA", split=f"WikiMIA_length{token_length}"
+            "swj0419/WikiMIA", split=f"WikiMIA_length{text_length}"
         )
 
     @mock.patch("src.data_loader.load_dataset")
@@ -113,8 +113,8 @@ class TestDataLoaderIntegration:
         assert texts[0] == "This is a Hugging Face integration test sample."
         assert labels[0] == 1
 
-    def test_token_length_splitting_integration(self, sample_csv_path):
-        """Integration test for text splitting with specified token length"""
+    def test_text_length_splitting_integration(self, sample_csv_path):
+        """Integration test for text splitting with specified text length"""
         # データローダーを作成
         loader = DataLoader(
             data_path=sample_csv_path,
@@ -123,13 +123,13 @@ class TestDataLoaderIntegration:
             label_column="label",
         )
 
-        # Test with different token lengths
-        for token_length in [1, 2, 3, 5]:
-            texts, labels = loader.get_data(token_length=token_length)
+        # Test with different text lengths
+        for text_length in [1, 2, 3, 5]:
+            texts, labels = loader.get_data(text_length=text_length)
 
-            # Verify all texts are less than or equal to token_length
+            # Verify all texts are less than or equal to text_length
             for text in texts:
-                assert len(text.split()) <= token_length
+                assert len(text.split()) <= text_length
 
             # Verify labels remain unchanged
             assert labels == [1, 0, 1, 0]

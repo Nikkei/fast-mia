@@ -62,12 +62,12 @@ class Evaluator:
             DataFrame of evaluation results
         """
         # Get required parameters from config
-        token_length = config.data.get("token_length", 32)
+        text_length = config.data.get("text_length", 32)
         lora_config = config.lora
         sampling_parameters_config = config.sampling_parameters
 
         # Get data
-        texts, labels = self.data_loader.get_data(token_length)
+        texts, labels = self.data_loader.get_data(text_length)
 
         # Get sampling parameters
         sampling_params = self.model_loader.get_sampling_params(

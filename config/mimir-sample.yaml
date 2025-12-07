@@ -32,7 +32,7 @@ data:
   label_column: "label"              # Name of label column
 
   # text split settings
-  token_length: 200                   # must be 200 for mimir dataset
+  text_length: 200                    # must be 200 for mimir dataset
 
   # Language
   space_delimited_language: true

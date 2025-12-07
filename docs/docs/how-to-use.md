@@ -78,10 +78,10 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 | `format` | ❌ | `csv` | One of `csv`, `jsonl`, `json`, `parquet`, or `huggingface`. |
 | `text_column` | ❌ | `text` | Column containing the raw text to probe. |
 | `label_column` | ❌ | `label` | Column containing membership labels (`1` = member, `0` = non-member). |
-| `token_length` | ❌ | `32` | Number of tokens kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
+| `text_length` | ❌ | `32` | Number of words kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
 | `space_delimited_language` | ❌ | `true` | Set to `false` for languages without whitespace like Japanese. |
 
-**Note**: If `space_delimited_language` is `false`, you must pre-tokenize your text and insert spaces between tokens beforehand; Fast-MIA assumes the input is already space-separated and will simply strip the spaces back out during scoring.
+**Note**: If `space_delimited_language` is `false`, you must pre-process your text and insert spaces between words beforehand; Fast-MIA assumes the input is already space-separated and will simply strip the spaces back out during scoring.
 
 #### Supported File Formats
 
@@ -95,7 +95,7 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 
 #### Supported Hugging Face Datasets
 
-- The [WikiMIA](https://huggingface.co/datasets/swj0419/WikiMIA) dataset is handled specially. If you set `data_path` to "swj0419/WikiMIA", it will be automatically recognized. For this dataset, the data corresponding to the specified token length (32, 64, 128, or 256) will be automatically loaded (e.g., "WikiMIA_length64").
+- The [WikiMIA](https://huggingface.co/datasets/swj0419/WikiMIA) dataset is handled specially. If you set `data_path` to "swj0419/WikiMIA", it will be automatically recognized. For this dataset, the data corresponding to the specified text length (32, 64, 128, or 256) will be automatically loaded (e.g., "WikiMIA_length64").
 - The [MIMIR](https://huggingface.co/datasets/iamgroot42/mimir) dataset is handled specially too. If you set `data_path` to "iamgroot42/mimir_{domain}_{ngram}", it will be automatically recognized. For this dataset, the data corresponding to the specified domain and ngram will be automatically loaded (e.g., "iamgroot42/mimir", "pile_cc", "ngram_7_0.2").
 
 **Note**: To use the MIMIR dataset, you need to create a `.env` file in the project root directory with your Hugging Face token. Create a `.env` file with the following content:

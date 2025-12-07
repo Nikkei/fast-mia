@@ -129,13 +129,13 @@ class SaMIAMethod(BaseMethod):
         scores = []
         for text, output in zip(texts, outputs, strict=True):
             suffix_ref = get_suffix(
-                text, 1 - self.prefix_ratio, data_config.get("token_length")
+                text, 1 - self.prefix_ratio, data_config.get("text_length")
             )
             rouge_scores = []
             for i in range(self.num_samples):
                 output_text = output.outputs[i].text
                 suffix_cand = get_suffix(
-                    output_text, 1 - self.prefix_ratio, data_config.get("token_length")
+                    output_text, 1 - self.prefix_ratio, data_config.get("text_length")
                 )
                 if self.zlib:
                     if data_config.get("space_delimited_language"):

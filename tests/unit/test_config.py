@@ -32,7 +32,7 @@ class TestConfig:
         assert config.data["format"] == "csv"
         assert config.data["text_column"] == "text"
         assert config.data["label_column"] == "label"
-        assert config.data["token_length"] == 64
+        assert config.data["text_length"] == 64
 
         assert len(config.methods) == 3
         assert config.methods[0]["type"] == "loss"

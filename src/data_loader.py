@@ -92,11 +92,11 @@ class DataLoader:
         else:
             raise ValueError(f"Unsupported data format: {data_format}")
 
-    def get_data(self, token_length: int | None = None) -> tuple[list[str], list[int]]:
+    def get_data(self, text_length: int | None = None) -> tuple[list[str], list[int]]:
         """Get data
 
         Args:
-            token_length: Number of words to split (if None, no split)
+            text_length: Number of words to split (if None, no split)
 
         Returns:
             texts: List of texts
@@ -107,7 +107,7 @@ class DataLoader:
                 "Data is not loaded. Please call load_data() or load_wikimia()."
             )
 
-        if token_length:
+        if text_length:
             # Split by number of words
             texts = []
             labels = []
@@ -116,7 +116,7 @@ class DataLoader:
                 text = row[self.text_column]
                 label = row[self.label_column]
 
-                texts.append(" ".join(text.split()[:token_length]))
+                texts.append(" ".join(text.split()[:text_length]))
                 labels.append(label)
 
             return texts, labels
@@ -129,17 +129,17 @@ class DataLoader:
             return texts, labels
 
     @staticmethod
-    def load_wikimia(token_length: int) -> "DataLoader":
-        """Load WikiMIA dataset with specified token length
+    def load_wikimia(text_length: int) -> "DataLoader":
+        """Load WikiMIA dataset with specified text length
 
         Args:
-            token_length: Token length (one of 32, 64, 128, 256)
+            text_length: Text length (one of 32, 64, 128, 256)
 
         Returns:
             DataLoader instance
         """
-        logging.info(f"Loading WikiMIA dataset (token_length={token_length})...")
-        dataset = load_dataset("swj0419/WikiMIA", split=f"WikiMIA_length{token_length}")
+        logging.info(f"Loading WikiMIA dataset (text_length={text_length})...")
+        dataset = load_dataset("swj0419/WikiMIA", split=f"WikiMIA_length{text_length}")
         df = dataset.to_pandas()
 
         # Initialize DataLoader without loading data
@@ -152,7 +152,7 @@ class DataLoader:
 
     @staticmethod
     def load_mimir(data_path: str, token: str) -> "DataLoader":
-        """Load Mimir dataset with specified token length
+        """Load Mimir dataset with fixed text length constraints
 
         Args:
             data_path: Path to the data (dataset name for huggingface format)
