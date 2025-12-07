@@ -74,8 +74,8 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 
 | Field | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `data_path` | ✅ | – | Path to a local file or Hugging Face dataset name (e.g., `swj0419/WikiMIA`). |
-| `format` | ❌ | `csv` | One of `csv`, `jsonl`, `json`, `parquet`, or `huggingface`. |
+| `data_path` | ✅ | – | Path to a local file or one of the dedicated Hugging Face datasets (`swj0419/WikiMIA` or `iamgroot42/mimir_{domain}_{ngram}`). |
+| `format` | ❌ | `csv` | One of `csv`, `jsonl`, `json`, `parquet`. Use `huggingface` **only** in combination with `swj0419/WikiMIA` or `iamgroot42/mimir_{domain}_{ngram}`. |
 | `text_column` | ❌ | `text` | Column containing the raw text to probe. |
 | `label_column` | ❌ | `label` | Column containing membership labels (`1` = member, `0` = non-member). |
 | `token_length` | ❌ | `32` | Number of tokens kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
@@ -91,9 +91,11 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 | `jsonl` | `pandas.read_json(data_path, lines=True)` |
 | `json` | `pandas.read_json(data_path)` |
 | `parquet` | `pandas.read_parquet(data_path)` |
-| `huggingface` | `datasets.load_wikimia` or `datasets.load_mimir` |
+| `huggingface` | Not available for arbitrary datasets. Use only with the dedicated WikiMIA/MIMIR loaders described below. |
 
 #### Supported Hugging Face Datasets
+
+Currently, only the following datasets are supported via the `huggingface` format.
 
 - The [WikiMIA](https://huggingface.co/datasets/swj0419/WikiMIA) dataset is handled specially. If you set `data_path` to "swj0419/WikiMIA", it will be automatically recognized. For this dataset, the data corresponding to the specified token length (32, 64, 128, or 256) will be automatically loaded (e.g., "WikiMIA_length64").
 - The [MIMIR](https://huggingface.co/datasets/iamgroot42/mimir) dataset is handled specially too. If you set `data_path` to "iamgroot42/mimir_{domain}_{ngram}", it will be automatically recognized. For this dataset, the data corresponding to the specified domain and ngram will be automatically loaded (e.g., "iamgroot42/mimir", "pile_cc", "ngram_7_0.2").

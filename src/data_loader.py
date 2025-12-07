@@ -64,14 +64,11 @@ class DataLoader:
             DataFrame
         """
         if data_format == "huggingface":
-            if not data_path:
-                raise ValueError(
-                    "data_path must be provided for huggingface format (as dataset name)"
-                )
-            # Load from Hugging Face Datasets
-            dataset = load_dataset(str(data_path))
-            split_name = list(dataset.keys())[0]
-            return dataset[split_name].to_pandas()
+            raise ValueError(
+                "Generic Hugging Face datasets are not supported. "
+                "Set data_path to 'swj0419/WikiMIA' or 'iamgroot42/mimir_{domain}_{ngram}' "
+                "to use the dedicated loaders."
+            )
 
         if not data_path:
             raise ValueError("data_path must be provided")
