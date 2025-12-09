@@ -5,6 +5,7 @@ model:
   max_seq_len_to_capture: 100
   max_num_seqs: 1
   enable_lora: false # Set to true to enable LoRA adapters
+  max_num_batched_tokens: 32768
 
 # LoRA settings (optional)
 # Set only if you want to use a specific LoRA adapter
@@ -32,7 +33,7 @@ data:
   label_column: "label"              # Name of label column
 
   # text split settings
-  token_length: 32                   # Number of words to split (for WikiMIA dataset: 32, 64, 128, or 256)
+  text_length: 32                    # Number of words to split (for WikiMIA dataset: 32, 64, 128, or 256)
 
   # Language
   space_delimited_language: true
@@ -76,11 +77,11 @@ methods:
     params:
       alpha: 0.3
       N: 5
-  - type: "samia"
-    params:
-      num_samples: 5
-      prefix_ratio: 0.5
-      zlib: true
+  # - type: "samia"
+  #   params:
+  #     num_samples: 5
+  #     prefix_ratio: 0.5
+  #     zlib: true
 
 # Output settings
 output_dir: "./results" 

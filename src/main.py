@@ -59,16 +59,16 @@ def main() -> None:
     # Load config
     config = Config(args.config)
 
-    # Get token length
-    token_length = config.data.get("token_length", 32)
+    # Get text length (word count)
+    text_length = config.data.get("text_length", 32)
 
     # If using WikiMIA dataset
     if config.data.get("data_path") == "swj0419/WikiMIA":
-        logging.info(f"WikiMIA dataset will be used with token length {token_length}")
-        data_loader = DataLoader.load_wikimia(token_length)
+        logging.info(f"WikiMIA dataset will be used with text length {text_length}")
+        data_loader = DataLoader.load_wikimia(text_length)
     elif config.data.get("data_path").startswith("iamgroot42/mimir"):
-        logging.info(f"Mimir dataset will be used with token length {token_length}")
-        assert token_length == 200, "Mimir dataset only supports token length 200"
+        logging.info(f"Mimir dataset will be used with text length {text_length}")
+        assert text_length == 200, "Mimir dataset only supports text length 200"
         data_loader = DataLoader.load_mimir(
             data_path=config.data.get("data_path"),
             token=os.environ.get("HUGGINGFACE_TOKEN"),

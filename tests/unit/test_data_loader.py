@@ -111,14 +111,14 @@ class TestDataLoader:
             label_column="label",
         )
 
-        # Get data with specified token length
-        token_length = 4
-        texts, labels = loader.get_data(token_length=token_length)
+        # Get data with specified text length
+        text_length = 4
+        texts, labels = loader.get_data(text_length=text_length)
 
         # Verify the length of split texts
         for text in texts:
-            # Ensure the number of words separated by spaces is less than or equal to token_length
-            assert len(text.split()) <= token_length
+            # Ensure the number of words separated by spaces is less than or equal to text_length
+            assert len(text.split()) <= text_length
 
         # The last text is long, so verify it is split
         assert texts[3] == "This is a longer"
@@ -165,12 +165,12 @@ class TestDataLoader:
         mock_load_dataset.return_value = mock_dataset
 
         # Load WikiMIA dataset
-        token_length = 32
-        loader = DataLoader.load_wikimia(token_length)
+        text_length = 32
+        loader = DataLoader.load_wikimia(text_length)
 
         # Verify that the mock is called correctly
         mock_load_dataset.assert_called_once_with(
-            "swj0419/WikiMIA", split=f"WikiMIA_length{token_length}"
+            "swj0419/WikiMIA", split=f"WikiMIA_length{text_length}"
         )
 
         # Get and verify data

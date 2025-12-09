@@ -15,7 +15,7 @@ data:
   format: "csv"
   text_column: "text"
   label_column: "label"
-  token_length: 64
+  text_length: 64
 
 # Evaluation methods
 methods:

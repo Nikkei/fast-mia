@@ -26,7 +26,7 @@ data:
   format: "csv"
   text_column: "input_text"
   label_column: "is_member"
-  token_length: 128
+  text_length: 128
 
 methods:
   - type: "loss"
@@ -48,7 +48,7 @@ output_dir: "./temp_results"
             assert config.model["model_id"] == "facebook/opt-125m"
             assert config.model["temperature"] == 0.0
             assert config.data["text_column"] == "input_text"
-            assert config.data["token_length"] == 128
+            assert config.data["text_length"] == 128
             assert len(config.methods) == 3
             assert config.methods[1]["params"]["window_size"] == 32
             assert config.config["output_dir"] == "./temp_results"
@@ -73,7 +73,7 @@ data:
   format: "huggingface"
   text_column: "input"
   label_column: "label"
-  token_length: 64
+  text_length: 64
   
 methods:
   - type: "loss"
@@ -101,7 +101,7 @@ output_dir: "./results/wikimia_test"
             # Check WikiMIA config
             assert config.data["data_path"] == "swj0419/WikiMIA"
             assert config.data["format"] == "huggingface"
-            assert config.data["token_length"] == 64
+            assert config.data["text_length"] == 64
 
             # Check multiple methods
             assert len(config.methods) == 4

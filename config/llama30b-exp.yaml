@@ -23,7 +23,7 @@ data:
   label_column: "label"              # Name of label column
 
   # text split settings
-  token_length: 32                   # Number of words to split (for WikiMIA dataset: 32, 64, 128, or 256)
+  text_length: 32                    # Number of words to split (for WikiMIA dataset: 32, 64, 128, or 256)
 
   # Language
   space_delimited_language: true
