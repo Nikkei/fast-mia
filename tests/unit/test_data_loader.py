@@ -144,34 +144,15 @@ class TestDataLoader:
         with pytest.raises(FileNotFoundError):
             DataLoader(data_path="nonexistent_file.csv", data_format="csv")
 
-    @mock.patch("src.data_loader.load_dataset")
-    def test_load_huggingface(self, mock_load_dataset):
-        """Test loading data from Hugging Face Datasets"""
-        # Create a mock dataset without using Dataset.from_dict()
-        mock_train_split = mock.MagicMock()
-        mock_train_split.to_pandas.return_value = pd.DataFrame(
-            {"text": ["This is a Hugging Face sample text."], "label": [1]}
-        )
-        mock_dataset = {"train": mock_train_split}
-        mock_load_dataset.return_value = mock_dataset
-
-        # Create a data loader
-        loader = DataLoader(
-            data_path="dummy/dataset",
-            data_format="huggingface",
-            text_column="text",
-            label_column="label",
-        )
-
-        # Verify that the mock is called correctly
-        mock_load_dataset.assert_called_once_with("dummy/dataset")
-
-        # Get and verify data
-        texts, labels = loader.get_data()
-        assert len(texts) == 1
-        assert len(labels) == 1
-        assert texts[0] == "This is a Hugging Face sample text."
-        assert labels[0] == 1
+    def test_load_huggingface_not_supported(self):
+        """Test that generic Hugging Face datasets are rejected"""
+        with pytest.raises(ValueError, match="Generic Hugging Face datasets are not supported"):
+            DataLoader(
+                data_path="dummy/dataset",
+                data_format="huggingface",
+                text_column="text",
+                label_column="label",
+            )
 
     @mock.patch("src.data_loader.load_dataset")
     def test_load_wikimia(self, mock_load_dataset):
