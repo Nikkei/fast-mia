@@ -68,10 +68,23 @@ def main() -> None:
         data_loader = DataLoader.load_wikimia(text_length)
     elif config.data.get("data_path").startswith("iamgroot42/mimir"):
         logging.info(f"Mimir dataset will be used with text length {text_length}")
-        assert text_length == 200, "Mimir dataset only supports text length 200"
+        if text_length != 200:
+            raise ValueError(
+                f"Mimir dataset only supports text length 200, but '{text_length}' "
+                "was provided. Update data.text_length in your config."
+            )
+
+        token = os.environ.get("HUGGINGFACE_TOKEN")
+        if not token:
+            raise RuntimeError(
+                "Environment variable HUGGINGFACE_TOKEN is not set. "
+                "Create a .env file in the project root (see docs/how-to-use.md) "
+                "with your Hugging Face token before using the Mimir dataset."
+            )
+
         data_loader = DataLoader.load_mimir(
             data_path=config.data.get("data_path"),
-            token=os.environ.get("HUGGINGFACE_TOKEN"),
+            token=token,
         )
     else:
         # Initialize normal data loader

@@ -78,6 +78,11 @@ class DataLoader:
         # Validate file extension
         self._validate_file_extension(data_path)
 
+        if not data_path.exists():
+            raise FileNotFoundError(
+                f"Data file '{data_path}' was not found. Check data.data_path in your config."
+            )
+
         if data_format == "csv":
             return pd.read_csv(data_path)
         elif data_format == "jsonl":
@@ -102,6 +107,16 @@ class DataLoader:
         if self.data is None:
             raise ValueError(
                 "Data is not loaded. Please call load_data() or load_wikimia()."
+            )
+
+        required_columns = {self.text_column, self.label_column}
+        missing_columns = sorted([col for col in required_columns if col not in self.data.columns])
+        if missing_columns:
+            column_list = "', '".join(missing_columns)
+            column_label = "Column" if len(missing_columns) == 1 else "Columns"
+            raise ValueError(
+                f"{column_label} '{column_list}' not found in data. "
+                "Check data.text_column and data.label_column in your config."
             )
 
         if text_length:
@@ -135,6 +150,14 @@ class DataLoader:
         Returns:
             DataLoader instance
         """
+        allowed_lengths = {32, 64, 128, 256}
+        if text_length not in allowed_lengths:
+            raise ValueError(
+                "WikiMIA dataset supports text_length values of "
+                "32, 64, 128, or 256. "
+                f"Received '{text_length}'. Update data.text_length in your config."
+            )
+
         logging.info(f"Loading WikiMIA dataset (text_length={text_length})...")
         dataset = load_dataset("swj0419/WikiMIA", split=f"WikiMIA_length{text_length}")
         df = dataset.to_pandas()
@@ -158,6 +181,12 @@ class DataLoader:
         Returns:
             DataLoader instance
         """
+        if not token:
+            raise ValueError(
+                "Hugging Face token is required to load the Mimir dataset. "
+                "Set the HUGGINGFACE_TOKEN environment variable (see docs/how-to-use.md)."
+            )
+
         mimir_domains = {
             "ax": "arxiv",
             "dm": "dm_mathematics",
@@ -179,18 +208,28 @@ class DataLoader:
         }
 
         elements = data_path.split("_")
-        assert len(elements) == 3, (
-            "Mimir dataset path must be in the format of 'iamgroot42/mimir_pc_702'"
-        )
-        assert elements[1] in mimir_domains, (
-            "Mimir dataset domain must be one of 'ax', 'dm', 'gh', 'hn', 'pc', 'pm', 'we', 'fp', 'c4', 'ta', 'tw'"
-        )
-        assert elements[2] in mimir_ngrams, (
-            "Mimir dataset ngram must be one of '702', '1302', '1308', 'none'"
-        )
-        dataset_name = elements[0]
-        domain = mimir_domains[elements[1]]
-        ngram = mimir_ngrams[elements[2]]
+        if len(elements) != 3:
+            raise ValueError(
+                "Mimir dataset path must be in the format 'iamgroot42/mimir_{domain}_{ngram}'. "
+                f"Received '{data_path}'."
+            )
+
+        dataset_name, domain_key, ngram_key = elements
+
+        if domain_key not in mimir_domains:
+            raise ValueError(
+                f"Invalid Mimir domain code '{domain_key}'. Supported domains: "
+                + ", ".join(sorted(mimir_domains))
+            )
+
+        if ngram_key not in mimir_ngrams:
+            raise ValueError(
+                f"Invalid Mimir ngram code '{ngram_key}'. Supported ngrams: "
+                + ", ".join(sorted(mimir_ngrams))
+            )
+
+        domain = mimir_domains[domain_key]
+        ngram = mimir_ngrams[ngram_key]
 
         logging.info(
             f"Loading Mimir dataset (dataset_name={dataset_name}, domain={domain}, ngram={ngram})..."

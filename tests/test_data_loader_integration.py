@@ -154,19 +154,66 @@ class TestDataLoaderIntegration:
         ]
 
         for invalid_path in invalid_paths:
-            with pytest.raises(AssertionError, match="Mimir dataset path must be in the format"):
+            with pytest.raises(ValueError, match="Mimir dataset path must be in the format"):
                 DataLoader.load_mimir(invalid_path, "test_token")
 
     def test_mimir_invalid_domain(self):
         """Test Mimir dataset with invalid domain"""
         invalid_domain = "iamgroot42/mimir_invalid_702"
         
-        with pytest.raises(AssertionError, match="Mimir dataset domain must be one of"):
+        with pytest.raises(ValueError, match="Invalid Mimir domain code"):
             DataLoader.load_mimir(invalid_domain, "test_token")
 
     def test_mimir_invalid_ngram(self):
         """Test Mimir dataset with invalid ngram"""
         invalid_ngram = "iamgroot42/mimir_pc_invalid"
         
-        with pytest.raises(AssertionError, match="Mimir dataset ngram must be one of"):
+        with pytest.raises(ValueError, match="Invalid Mimir ngram code"):
             DataLoader.load_mimir(invalid_ngram, "test_token")
+
+    def test_mimir_missing_token(self):
+        """Test that loading Mimir without a token fails fast"""
+        data_path = "iamgroot42/mimir_pc_702"
+
+        with pytest.raises(ValueError, match="Hugging Face token is required"):
+            DataLoader.load_mimir(data_path, token="")
+
+    def test_wikimia_invalid_text_length(self):
+        """Ensure WikiMIA loader validates supported text lengths"""
+        with pytest.raises(ValueError, match="WikiMIA dataset supports text_length"):
+            DataLoader.load_wikimia(text_length=999)
+
+    def test_missing_local_data_file(self, sample_csv_path):
+        """Ensure local file loads show a descriptive error when the file is missing"""
+        missing_path = sample_csv_path.parent / "does_not_exist.csv"
+
+        with pytest.raises(FileNotFoundError, match="Data file"):
+            DataLoader(
+                data_path=missing_path,
+                data_format="csv",
+                text_column="text",
+                label_column="label",
+            )
+
+    @pytest.mark.parametrize(
+        ("text_column", "label_column", "missing_name"),
+        [
+            ("missing_text", "label", "missing_text"),
+            ("text", "missing_label", "missing_label"),
+            ("missing_text", "missing_label", "'missing_label', 'missing_text'"),
+            
+        ],
+    )
+    def test_missing_columns_in_get_data(
+        self, sample_csv_path, text_column, label_column, missing_name
+    ):
+        """Ensure missing text/label columns produce descriptive errors"""
+        loader = DataLoader(
+            data_path=sample_csv_path,
+            data_format="csv",
+            text_column=text_column,
+            label_column=label_column,
+        )
+
+        with pytest.raises(ValueError, match=missing_name):
+            loader.get_data()

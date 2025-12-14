@@ -25,6 +25,18 @@ from .samia import SaMIAMethod
 from .zlib import ZlibMethod
 
 
+METHOD_BUILDERS = {
+    "loss": LossMethod,
+    "lower": LowerMethod,
+    "zlib": ZlibMethod,
+    "mink": MinKMethod,
+    "pac": PACMethod,
+    "recall": ReCaLLMethod,
+    "conrecall": CONReCaLLMethod,
+    "samia": SaMIAMethod,
+}
+
+
 class MethodFactory:
     """Method factory class"""
 
@@ -46,24 +58,20 @@ class MethodFactory:
         method_type = method_config.get("type")
         method_params = method_config.get("params", {})
 
-        if method_type == "loss":
-            return LossMethod(method_params)
-        elif method_type == "lower":
-            return LowerMethod(method_params)
-        elif method_type == "zlib":
-            return ZlibMethod(method_params)
-        elif method_type == "mink":
-            return MinKMethod(method_params)
-        elif method_type == "pac":
-            return PACMethod(method_params)
-        elif method_type == "recall":
-            return ReCaLLMethod(method_params)
-        elif method_type == "conrecall":
-            return CONReCaLLMethod(method_params)
-        elif method_type == "samia":
-            return SaMIAMethod(method_params)
-        else:
-            raise ValueError(f"Unknown method type: {method_type}")
+        if not method_type:
+            supported = ", ".join(sorted(METHOD_BUILDERS))
+            raise ValueError(
+                f"Each method config must include a 'type'. Supported types: {supported}"
+            )
+
+        builder = METHOD_BUILDERS.get(method_type)
+        if builder is None:
+            supported = ", ".join(sorted(METHOD_BUILDERS))
+            raise ValueError(
+                f"Unknown method type '{method_type}'. Supported types: {supported}"
+            )
+
+        return builder(method_params)
 
     @staticmethod
     def create_methods(methods_config: list[dict[str, Any]]) -> list[BaseMethod]:
