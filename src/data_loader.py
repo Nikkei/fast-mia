@@ -219,13 +219,13 @@ class DataLoader:
         if domain_key not in mimir_domains:
             raise ValueError(
                 f"Invalid Mimir domain code '{domain_key}'. Supported domains: "
-                + ", ".join(sorted(mimir_domains))
+                + ", ".join(sorted(mimir_domains.keys()))
             )
 
         if ngram_key not in mimir_ngrams:
             raise ValueError(
                 f"Invalid Mimir ngram code '{ngram_key}'. Supported ngrams: "
-                + ", ".join(sorted(mimir_ngrams))
+                + ", ".join(sorted(mimir_ngrams.keys()))
             )
 
         domain = mimir_domains[domain_key]
