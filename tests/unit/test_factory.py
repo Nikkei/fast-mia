@@ -23,5 +23,9 @@ class TestMethodFactory:
         assert type_ in method.method_name
 
     def test_unknown_method_type(self):
-        with pytest.raises(ValueError, match="Unknown method type"): 
+        with pytest.raises(ValueError, match="Unknown method type 'unknown'"): 
             MethodFactory.create_method({"type": "unknown", "params": {}})
+
+    def test_missing_method_type(self):
+        with pytest.raises(ValueError, match="must include a 'type'"):
+            MethodFactory.create_method({"params": {}})
