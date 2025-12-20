@@ -40,6 +40,10 @@ output_dir: "./results"
         assert len(config.methods) == 1
         assert config.methods[0]["type"] == "loss"
         assert config.config["output_dir"] == "./results"
+        assert config.sampling_parameters["prompt_logprobs"] == 0
+        assert config.sampling_parameters["max_tokens"] == 1
+        assert config.sampling_parameters["temperature"] == 0.0
+        assert config.sampling_parameters["top_p"] == 1.0
 
     @patch(
         "pathlib.Path.open", new_callable=mock_open, read_data="invalid: yaml: file:"
@@ -85,6 +89,8 @@ sampling_parameters:
         assert config.sampling_parameters is not None
         assert config.sampling_parameters["temperature"] == 0.7
         assert config.sampling_parameters["top_p"] == 0.9
+        assert config.sampling_parameters["prompt_logprobs"] == 0
+        assert config.sampling_parameters["max_tokens"] == 1
 
         # Check that an empty list is returned if methods section is missing
         assert config.methods == []

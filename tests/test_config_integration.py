@@ -47,6 +47,10 @@ output_dir: "./temp_results"
             # Check config values
             assert config.model["model_id"] == "facebook/opt-125m"
             assert config.model["temperature"] == 0.0
+            assert config.sampling_parameters["prompt_logprobs"] == 0
+            assert config.sampling_parameters["max_tokens"] == 1
+            assert config.sampling_parameters["temperature"] == 0.0
+            assert config.sampling_parameters["top_p"] == 1.0
             assert config.data["text_column"] == "input_text"
             assert config.data["text_length"] == 128
             assert len(config.methods) == 3
@@ -113,6 +117,7 @@ output_dir: "./results/wikimia_test"
             assert config.sampling_parameters["temperature"] == 0.7
             assert config.sampling_parameters["top_p"] == 0.9
             assert config.sampling_parameters["max_tokens"] == 20
+            assert config.sampling_parameters["prompt_logprobs"] == 0
 
             # Check lora config
             assert config.lora["name"] == "adapter"

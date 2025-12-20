@@ -52,6 +52,11 @@ class TestConfig:
         # Check that other sections are loaded correctly
         assert config.data["data_path"] == "./data/test_data.csv"
         assert len(config.methods) == 1
+        # Default sampling parameters should still be available
+        assert config.sampling_parameters["prompt_logprobs"] == 0
+        assert config.sampling_parameters["max_tokens"] == 1
+        assert config.sampling_parameters["temperature"] == 0.0
+        assert config.sampling_parameters["top_p"] == 1.0
 
     def test_nonexistent_config_file(self):
         """Test to confirm error is raised when nonexistent file is specified"""
@@ -94,7 +99,10 @@ class TestConfig:
             assert config.data == {}
             assert config.methods == []
             assert config.lora is None
-            assert config.sampling_parameters == {}
+            assert config.sampling_parameters["prompt_logprobs"] == 0
+            assert config.sampling_parameters["max_tokens"] == 1
+            assert config.sampling_parameters["temperature"] == 0.0
+            assert config.sampling_parameters["top_p"] == 1.0
         finally:
             # Delete file after test
             if os.path.exists(empty_config_path):

@@ -26,7 +26,7 @@ All behavior is driven by a YAML file. Each top-level key toggles a different su
 | Key | Purpose |
 |-----|---------|
 | `model` | Required. Parameters are directly forwarded to `vllm.LLM` (model, dtype, etc.). |
-| `sampling_parameters` | Optional. Parameters are directly forwarded to `vllm.SamplingParams`. |
+| `sampling_parameters` | Optional. Parameters are directly forwarded to `vllm.SamplingParams`. `prompt_logprobs` defaults to `0`, `max_tokens` defaults to `1`, `temperature` defaults to `0.0`, and `top_p` defaults to `1.0` when omitted. |
 | `lora` | Optional. Parameters are directly forwarded to `vllm.lora.request.LoRARequest`. Omit when no adapter is needed. |
 | `data` | Required. Specifies the dataset source, file format, column names, etc. |
 | `methods` | Required. Ordered list of evaluation methods. Each entry declares a `type` and method-specific `params`. |
@@ -45,16 +45,16 @@ Please refer to `config/sample.yaml` for a complete example configuration file.
 
 ### `sampling_parameters` Block
 
-Values are passed to `vllm.SamplingParams`. Select params following the [vLLM.SamplingParams API Reference](https://docs.vllm.ai/en/stable/api/vllm/index.html#vllm.SamplingParams).
+Values are passed to `vllm.SamplingParams`. Select params following the [vLLM.SamplingParams API Reference](https://docs.vllm.ai/en/stable/api/vllm/index.html#vllm.SamplingParams). Fast-MIA automatically enforces `prompt_logprobs: 0`, `max_tokens: 1`, `temperature: 0.0`, and `top_p: 1.0` whenever the config omits those keys to ensure deterministic, efficient scoring, but you can override any of these defaults by explicitly setting them inside this block.
 
 **Recommended defaults for deterministic scoring**
 
 | Field | Purpose |
 |-------|---------|
-| `max_tokens` | Use `1` to request only the immediate next token; keeps compute low. |
-| `prompt_logprobs` | Use `0` to get prompt text log-probabilities. |
-| `temperature` | Set to `0.0` for deterministic runs. |
-| `top_p` | Leave at `1.0` so determinism is governed solely by `temperature`. |
+| `max_tokens` | Use `1` to request only the immediate next token; Fast-MIA defaults to this. |
+| `prompt_logprobs` | Use `0` to get prompt text log-probabilities; Fast-MIA defaults to this. |
+| `temperature` | Set to `0.0` for deterministic runs; Fast-MIA defaults to this. |
+| `top_p` | Leave at `1.0` so determinism is governed solely by `temperature`; Fast-MIA defaults to this. |
 
 ### `lora` Block (Optional)
 
