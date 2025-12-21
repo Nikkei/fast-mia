@@ -17,6 +17,13 @@ from typing import Any
 
 import yaml
 
+DEFAULT_SAMPLING_PARAMETERS: dict[str, Any] = {
+    "prompt_logprobs": 0,
+    "max_tokens": 1,
+    "temperature": 0.0,
+    "top_p": 1.0,
+}
+
 
 class Config:
     """Class for loading config files"""
@@ -59,4 +66,5 @@ class Config:
     @property
     def sampling_parameters(self) -> dict[str, Any]:
         """Get sampling_parameters config"""
-        return self.config.get("sampling_parameters", {})
+        sampling_parameters = (self.config.get("sampling_parameters") or {}).copy()
+        return {**DEFAULT_SAMPLING_PARAMETERS, **sampling_parameters}
