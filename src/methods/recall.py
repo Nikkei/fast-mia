@@ -172,8 +172,9 @@ class ReCaLLMethod(BaseMethod):
             for output in conditional_outputs
         ]
 
+        eps = 1e-10
         scores = [
-            conditional_loss / loss
+            conditional_loss / (loss + eps)
             for conditional_loss, loss in zip(conditional_losses, losses, strict=False)
         ]
 
