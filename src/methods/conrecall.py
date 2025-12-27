@@ -214,8 +214,9 @@ class CONReCaLLMethod(BaseMethod):
             for output in nonmember_conditional_outputs
         ]
 
+        eps = 1e-10
         scores = [
-            (nonmember_conditional_loss - self.gamma * member_conditional_loss) / loss
+            (nonmember_conditional_loss - self.gamma * member_conditional_loss) / (loss + eps)
             for member_conditional_loss, nonmember_conditional_loss, loss in zip(
                 member_conditional_losses,
                 nonmember_conditional_losses,

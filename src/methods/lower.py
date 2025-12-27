@@ -87,8 +87,9 @@ class LowerMethod(BaseMethod):
             self.process_output(lower_output) for lower_output in lower_outputs
         ]
 
+        eps = 1e-10
         scores = [
-            lower_loss / loss
+            lower_loss / (loss + eps)
             for lower_loss, loss in zip(lower_losses, losses, strict=False)
         ]
 
