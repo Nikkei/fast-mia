@@ -16,6 +16,7 @@ from typing import Any
 
 from .base import BaseMethod
 from .conrecall import CONReCaLLMethod
+from .dcpdd import DCPDDMethod
 from .loss import LossMethod
 from .lower import LowerMethod
 from .mink import MinKMethod
@@ -23,8 +24,6 @@ from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .samia import SaMIAMethod
 from .zlib import ZlibMethod
-from .dcpdd import DCPDDMethod
-
 
 METHOD_BUILDERS = {
     "loss": LossMethod,

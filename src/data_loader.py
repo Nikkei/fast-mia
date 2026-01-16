@@ -110,7 +110,9 @@ class DataLoader:
             )
 
         required_columns = {self.text_column, self.label_column}
-        missing_columns = sorted([col for col in required_columns if col not in self.data.columns])
+        missing_columns = sorted(
+            [col for col in required_columns if col not in self.data.columns]
+        )
         if missing_columns:
             column_list = "', '".join(missing_columns)
             column_label = "Column" if len(missing_columns) == 1 else "Columns"

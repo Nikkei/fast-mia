@@ -14,6 +14,7 @@
 
 from .base import BaseMethod
 from .conrecall import CONReCaLLMethod
+from .dcpdd import DCPDDMethod
 from .factory import MethodFactory
 from .loss import LossMethod
 from .lower import LowerMethod
@@ -22,7 +23,6 @@ from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .samia import SaMIAMethod
 from .zlib import ZlibMethod
-from .dcpdd import DCPDDMethod
 
 __all__ = [
     "BaseMethod",
