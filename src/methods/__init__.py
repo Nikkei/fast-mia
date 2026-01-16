@@ -22,6 +22,7 @@ from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .samia import SaMIAMethod
 from .zlib import ZlibMethod
+from .dcpdd import DCPDDMethod
 
 __all__ = [
     "BaseMethod",
@@ -34,4 +35,5 @@ __all__ = [
     "PACMethod",
     "SaMIAMethod",
     "CONReCaLLMethod",
+    "DCPDDMethod",
 ]
