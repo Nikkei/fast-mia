@@ -90,6 +90,16 @@ class Evaluator:
                     lora_request,
                     data_config=config.data,
                 )
+            elif method.method_name == "dcpdd":
+                # Run method
+                scores = method.run(
+                    texts,
+                    self.model_loader.model,
+                    self.model_loader.tokenizer,
+                    sampling_params,
+                    lora_request,
+                    data_config=config.data,
+                )
             elif method.method_name in ["recall", "conrecall"]:
                 # Run method
                 scores = method.run(

@@ -178,5 +178,9 @@ cython_debug/
 
 
 # fast-mia
+## cache
+/.fastmia_cache/*
 ## results
 /results/*
+## C4
+/data/c4-*
