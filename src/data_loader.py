@@ -163,7 +163,7 @@ class DataLoader:
         df = dataset.to_pandas()
 
         # Initialize DataLoader without loading data
-        loader = DataLoader(data_path=None, data_format=None)
+        loader = DataLoader(data_path=None)
         loader.data = df
         loader.text_column = "input"
         loader.label_column = "label"
@@ -247,7 +247,7 @@ class DataLoader:
         )
 
         # Initialize DataLoader without loading data
-        loader = DataLoader(data_path=None, data_format=None)
+        loader = DataLoader(data_path=None)
         loader.data = df
         loader.text_column = "input"
         loader.label_column = "label"
