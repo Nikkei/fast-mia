@@ -104,11 +104,7 @@ class PACMethod(BaseMethod):
         Returns:
             Polarized Distance
         """
-        token_log_probs = []
-        for prompt_logprob in output.prompt_logprobs:
-            if prompt_logprob is None:
-                continue
-            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+        token_log_probs = self._extract_token_log_probs(output)
         return calculate_polarized_distance(token_log_probs)
 
     def run(

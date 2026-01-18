@@ -61,6 +61,23 @@ class BaseMethod(ABC):
         pass
 
     @staticmethod
+    def _extract_token_log_probs(output: RequestOutput) -> list[float]:
+        """Extract token log probabilities from model output
+
+        Args:
+            output: Model output
+
+        Returns:
+            List of token log probabilities
+        """
+        token_log_probs = []
+        for prompt_logprob in output.prompt_logprobs:
+            if prompt_logprob is None:
+                continue
+            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+        return token_log_probs
+
+    @staticmethod
     def _get_model_cache_key(
         texts: list[str],
         sampling_params: SamplingParams,
