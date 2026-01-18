@@ -18,6 +18,7 @@ from typing import Any
 
 import pandas as pd
 
+from .config import Config
 from .data_loader import DataLoader
 from .methods import BaseMethod
 from .model_loader import ModelLoader
@@ -51,7 +52,7 @@ class Evaluator:
 
     def evaluate(
         self,
-        config: dict[str, Any],
+        config: Config,
     ) -> pd.DataFrame:
         """Evaluate membership inference attacks on data with specified number of words
 
