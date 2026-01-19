@@ -38,6 +38,11 @@ class BaseMethod(ABC):
         "score_misses": 0,
     }
 
+    # Method requirements (override in subclasses as needed)
+    requires_labels: bool = False
+    requires_tokenizer: bool = False
+    requires_sampling_params: bool = True
+
     def __init__(self, method_name: str, method_config: dict[str, Any] = None) -> None:
         """Initialize membership inference method
 
@@ -59,6 +64,23 @@ class BaseMethod(ABC):
             Score
         """
         pass
+
+    @staticmethod
+    def _extract_token_log_probs(output: RequestOutput) -> list[float]:
+        """Extract token log probabilities from model output
+
+        Args:
+            output: Model output
+
+        Returns:
+            List of token log probabilities
+        """
+        token_log_probs = []
+        for prompt_logprob in output.prompt_logprobs:
+            if prompt_logprob is None:
+                continue
+            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+        return token_log_probs
 
     @staticmethod
     def _get_model_cache_key(

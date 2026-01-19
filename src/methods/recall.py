@@ -70,6 +70,9 @@ def process_prefix(
 class ReCaLLMethod(BaseMethod):
     """ReCaLL membership inference method"""
 
+    requires_labels: bool = True
+    requires_tokenizer: bool = True
+
     def __init__(self, method_config: dict[str, Any] = None) -> None:
         """Initialize ReCaLL-based method
 

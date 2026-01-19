@@ -63,10 +63,11 @@ def main() -> None:
     text_length = config.data.get("text_length", 32)
 
     # If using WikiMIA dataset
-    if config.data.get("data_path") == "swj0419/WikiMIA":
+    data_path = config.data.get("data_path")
+    if data_path == "swj0419/WikiMIA":
         logging.info(f"WikiMIA dataset will be used with text length {text_length}")
         data_loader = DataLoader.load_wikimia(text_length)
-    elif config.data.get("data_path").startswith("iamgroot42/mimir"):
+    elif data_path is not None and data_path.startswith("iamgroot42/mimir"):
         logging.info(f"Mimir dataset will be used with text length {text_length}")
         if text_length != 200:
             raise ValueError(
