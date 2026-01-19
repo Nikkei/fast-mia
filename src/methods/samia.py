@@ -66,6 +66,8 @@ def rouge_n(candidate: list, reference: list, n: int = 1) -> float:
 class SaMIAMethod(BaseMethod):
     """SaMIA membership inference method"""
 
+    requires_sampling_params: bool = False
+
     def __init__(self, method_config: dict[str, Any] = None) -> None:
         """Initialize SaMIA-based method
 
