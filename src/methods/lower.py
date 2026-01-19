@@ -42,11 +42,7 @@ class LowerMethod(BaseMethod):
         Returns:
             Negative mean log-likelihood (loss)
         """
-        token_log_probs = []
-        for prompt_logprob in output.prompt_logprobs:
-            if prompt_logprob is None:
-                continue
-            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+        token_log_probs = self._extract_token_log_probs(output)
 
         loss = -np.mean(token_log_probs)
         return loss

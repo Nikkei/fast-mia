@@ -40,11 +40,7 @@ class LossMethod(BaseMethod):
         Returns:
             Loss
         """
-        token_log_probs = []
-        for prompt_logprob in output.prompt_logprobs:
-            if prompt_logprob is None:
-                continue
-            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+        token_log_probs = self._extract_token_log_probs(output)
 
         # Calculate loss (lower for data included in training data)
         loss = np.mean(token_log_probs)
