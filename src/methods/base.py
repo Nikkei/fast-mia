@@ -38,6 +38,11 @@ class BaseMethod(ABC):
         "score_misses": 0,
     }
 
+    # Method requirements (override in subclasses as needed)
+    requires_labels: bool = False
+    requires_tokenizer: bool = False
+    requires_sampling_params: bool = True
+
     def __init__(self, method_name: str, method_config: dict[str, Any] = None) -> None:
         """Initialize membership inference method
 

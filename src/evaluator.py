@@ -82,34 +82,18 @@ class Evaluator:
         # Evaluate with each method
         results = defaultdict(list)
         for method in self.methods:
-            if method.method_name == "samia":
-                # Run method
-                scores = method.run(
-                    texts,
-                    self.model_loader.model,
-                    lora_request,
-                    data_config=config.data,
-                )
-            elif method.method_name in ["recall", "conrecall"]:
-                # Run method
-                scores = method.run(
-                    texts,
-                    labels,
-                    self.model_loader.model,
-                    self.model_loader.tokenizer,
-                    sampling_params,
-                    lora_request,
-                    data_config=config.data,
-                )
-            else:
-                # Run method
-                scores = method.run(
-                    texts,
-                    self.model_loader.model,
-                    sampling_params,
-                    lora_request,
-                    data_config=config.data,
-                )
+            # Build arguments based on method requirements
+            args = [texts]
+            if method.requires_labels:
+                args.append(labels)
+            args.append(self.model_loader.model)
+            if method.requires_tokenizer:
+                args.append(self.model_loader.tokenizer)
+            if method.requires_sampling_params:
+                args.append(sampling_params)
+            args.append(lora_request)
+
+            scores = method.run(*args, data_config=config.data)
 
             # Calculate metrics
             auroc, fpr95, tpr05 = get_metrics(scores, labels)
