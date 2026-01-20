@@ -9,7 +9,7 @@ from src.config import Config
 from src.data_loader import DataLoader
 from src.model_loader import ModelLoader
 from src.methods.factory import MethodFactory
-from src.evaluator import Evaluator
+from src.evaluator import Evaluator, EvaluationResult
 
 class TestEndToEndIntegration:
     @mock.patch("src.model_loader.SamplingParams")
@@ -95,23 +95,28 @@ class TestEndToEndIntegration:
             evaluator = Evaluator(loader, model_loader, methods)
             result = evaluator.evaluate(config)
 
-            # --- Check DataFrame ---
-            assert isinstance(result, pd.DataFrame)
-            assert set(result.columns) >= {"method", "auroc", "fpr95", "tpr05"}
+            # --- Check EvaluationResult ---
+            assert isinstance(result, EvaluationResult)
+            assert isinstance(result.results_df, pd.DataFrame)
+            assert set(result.results_df.columns) >= {"method", "auroc", "fpr95", "tpr05"}
             # All method names should be included in the result
-            result_methods = set(result["method"])
+            result_methods = set(result.results_df["method"])
             for name in method_names:
                 assert any(name in m for m in result_methods)
             # Number of data
-            assert len(result) == len(config.methods)
+            assert len(result.results_df) == len(config.methods)
             # Metric values should be in percent format
             for col in ["auroc", "fpr95", "tpr05"]:
-                for val in result[col]:
+                for val in result.results_df[col]:
                     assert isinstance(val, str) and val.endswith("%")
+            # Check detailed_results
+            assert len(result.detailed_results) == len(config.methods)
+            # Check data_stats
+            assert result.data_stats["num_samples"] == 4
 
             # --- Verify result file saving and contents ---
             output_path = Path(temp_dir) / "result.csv"
-            result.to_csv(output_path, index=False)
+            result.results_df.to_csv(output_path, index=False)
             assert output_path.exists()
             df = pd.read_csv(output_path)
             assert set(df.columns) >= {"method", "auroc", "fpr95", "tpr05"}
