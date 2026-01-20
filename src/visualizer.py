@@ -20,6 +20,7 @@ from typing import Any
 # Fix matplotlib backend before import (for Kaggle/Jupyter environments)
 os.environ.pop("MPLBACKEND", None)
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -194,7 +195,7 @@ class Visualizer:
         ax.set_ylim(0, 1.1)
         ax.grid(True, alpha=0.3, axis="y")
 
-        def add_labels(bars: Any) -> None:
+        def add_labels(bars: matplotlib.container.BarContainer) -> None:
             for bar in bars:
                 height = bar.get_height()
                 if not np.isnan(height):
