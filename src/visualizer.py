@@ -13,11 +13,14 @@
 # limitations under the License.
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
+# Fix matplotlib backend before import (for Kaggle/Jupyter environments)
+os.environ.pop("MPLBACKEND", None)
 import matplotlib
-matplotlib.use("Agg")  # Set non-GUI backend before importing pyplot
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_curve
