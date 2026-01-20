@@ -34,6 +34,14 @@ source .venv/bin/activate
 uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
 ```
 
+### Detailed Report Mode
+
+For benchmarking with detailed outputs (metadata, per-sample scores, visualizations):
+
+```bash
+uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml --detailed-report
+```
+
 ## 📚 Supported MIA Methods
 
 Fast-MIA supports the following MIA methods:

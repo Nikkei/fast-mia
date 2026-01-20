@@ -71,6 +71,27 @@ uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
 uv run --with 'vllm==0.10.2' python main.py --config config/your_own_configuration.yaml
 ```
 
+### Output
+
+By default, results are saved to `results/YYYYMMDD-HHMMSS/`:
+- `results.csv` - Summary metrics (AUROC, FPR@95, TPR@5)
+- `config.yaml` - Copy of the configuration used
+
+### Detailed Report Mode
+
+For benchmarking and paper-ready outputs, use `--detailed-report`:
+
+```bash
+uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml --detailed-report
+```
+
+This generates:
+- `results.csv` - Summary metrics
+- `detailed_scores.csv` - Per-sample scores for each method
+- `metadata.json` / `metadata.yaml` - Execution conditions (model, data, git info, timing)
+- `report.txt` - Human-readable summary
+- `figures/` - ROC curves, score distributions, metrics comparison
+
 Please visit our [How to Use](https://nikkei.github.io/fast-mia/how-to-use/) to learn more.
 
 ## Performance Comparison

@@ -18,6 +18,7 @@ uv run --with 'vllm==0.10.2' python main.py --config config/your_own_configurati
 | `--config` | ✅ | – | Path to the YAML configuration file. |
 | `--seed` | ❌ | `42` | Global seed passed to `random`, `torch`, `numpy`, and Python to make evaluations reproducible. |
 | `--max-cache-size` | ❌ | `1000` | Maximum number of vLLM generations cached across methods; the default is sufficient for most runs. |
+| `--detailed-report` | ❌ | Off | Generate detailed report with metadata, per-sample scores, and visualizations. |
 
 ## Configuration Files
 
@@ -134,3 +135,69 @@ Available method types and their parameters:
 ### `output_dir`
 
 Directory where CSV results are written. The folder is created if missing.
+
+## Output Files
+
+### Default Output
+
+By default, Fast-MIA saves the following files in a timestamped folder:
+
+```
+results/
+└── YYYYMMDD-HHMMSS/
+    ├── config.yaml    # Copy of the configuration used
+    └── results.csv    # Summary metrics (AUROC, FPR@95, TPR@5)
+```
+
+## Detailed Report Mode
+
+When you run with `--detailed-report`, Fast-MIA generates additional outputs for benchmarking and analysis:
+
+```bash
+uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml --detailed-report
+```
+
+### Output Structure
+
+```
+results/
+└── YYYYMMDD-HHMMSS/           # Timestamped folder for each run
+    ├── config.yaml            # Copy of the configuration used
+    ├── results.csv            # Summary metrics (AUROC, FPR@95, TPR@5)
+    ├── detailed_scores.csv    # Per-sample scores for each method
+    ├── metadata.json          # Execution metadata (JSON format)
+    ├── metadata.yaml          # Execution metadata (YAML format)
+    ├── report.txt             # Human-readable summary report
+    └── figures/
+        ├── roc_curves.png         # ROC curves for all methods
+        ├── score_distributions.png # Score histograms (member vs non-member)
+        └── metrics_comparison.png  # Bar chart comparing metrics
+```
+
+### Metadata Contents
+
+The metadata files (`metadata.json` / `metadata.yaml`) include:
+
+| Section | Contents |
+|---------|----------|
+| `experiment` | Start/end time, duration |
+| `environment` | Python version, platform, hostname |
+| `git` | Commit hash, branch, dirty status |
+| `model` | Model ID, parameters |
+| `data` | Dataset path, format, sample counts |
+| `sampling_parameters` | vLLM sampling configuration |
+| `methods` | List of evaluated methods with parameters |
+| `cache` | Cache hit/miss statistics |
+
+### Detailed Scores
+
+The `detailed_scores.csv` file contains per-sample scores:
+
+```csv
+label,loss,zlib,mink_0.2,recall
+1,0.832,0.654,0.721,0.891
+0,0.234,0.312,0.287,0.156
+...
+```
+
+This allows for post-hoc analysis, custom visualizations, or statistical testing.
