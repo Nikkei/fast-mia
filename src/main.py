@@ -40,6 +40,11 @@ def main() -> None:
     parser.add_argument(
         "--max-cache-size", type=int, default=1000, help="Maximum cache size"
     )
+    parser.add_argument(
+        "--detailed-report",
+        action="store_true",
+        help="Generate detailed report with metadata, scores, and visualizations",
+    )
     args = parser.parse_args()
     start_time = datetime.now()
 
@@ -108,14 +113,15 @@ def main() -> None:
         data_loader, model_loader, methods, max_cache_size=args.max_cache_size
     )
 
-    results = evaluator.evaluate(config=config)
+    eval_result = evaluator.evaluate(config=config)
+    end_time = datetime.now()
 
     # Show results
     logging.info(
         "\nEvaluation Results:\n"
         + "=" * 50
         + "\n"
-        + results.to_string(index=False)
+        + eval_result.results_df.to_string(index=False)
         + "\n"
         + "=" * 50
     )
@@ -127,13 +133,43 @@ def main() -> None:
     run_dir = output_dir / start_time.strftime("%Y%m%d-%H%M%S")
     run_dir.mkdir(parents=True, exist_ok=False)
 
-    output_path = run_dir / "results.csv"
-    results.to_csv(output_path, index=False)
-    logging.info(f"Results saved to {output_path}")
+    if args.detailed_report:
+        # Detailed report mode: metadata, scores, and visualizations
+        from .result_writer import ResultWriter
+        from .visualizer import Visualizer
 
-    config_copy_path = run_dir / "config.yaml"
-    shutil.copy(config.config_path, config_copy_path)
-    logging.info(f"Config copied to {config_copy_path}")
+        result_writer = ResultWriter(run_dir, config, start_time)
+
+        saved_paths = result_writer.save_all(
+            results_df=eval_result.results_df,
+            results=eval_result.detailed_results,
+            labels=eval_result.labels,
+            cache_stats=eval_result.cache_stats,
+            data_stats=eval_result.data_stats,
+            end_time=end_time,
+        )
+
+        # Generate visualizations
+        visualizer = Visualizer(run_dir)
+        figure_paths = visualizer.generate_all_plots(
+            eval_result.detailed_results,
+            eval_result.labels,
+        )
+        saved_paths.update(figure_paths)
+
+        logging.info(f"\nAll outputs saved to: {run_dir}")
+        logging.info("Output files:")
+        for name, path in saved_paths.items():
+            logging.info(f"  - {name}: {path}")
+    else:
+        # Default mode: simple output (results.csv and config.yaml only)
+        output_path = run_dir / "results.csv"
+        eval_result.results_df.to_csv(output_path, index=False)
+        logging.info(f"Results saved to {output_path}")
+
+        config_copy_path = run_dir / "config.yaml"
+        shutil.copy(config.config_path, config_copy_path)
+        logging.info(f"Config copied to {config_copy_path}")
 
 
 if __name__ == "__main__":

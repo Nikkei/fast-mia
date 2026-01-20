@@ -3,7 +3,7 @@ from unittest import mock
 import pandas as pd
 import math
 
-from src.evaluator import Evaluator
+from src.evaluator import Evaluator, EvaluationResult
 from src.config import Config
 from src.methods.factory import MethodFactory
 from src.utils import get_metrics
@@ -84,14 +84,20 @@ class TestEvaluator:
     def test_evaluate_normal(self, config, mock_data_loader, mock_model_loader, mock_methods):
         evaluator = Evaluator(mock_data_loader, mock_model_loader, mock_methods)
         result = evaluator.evaluate(config)
-        # Check DataFrame shape and content
-        assert isinstance(result, pd.DataFrame)
-        assert set(result.columns) == {"method", "auroc", "fpr95", "tpr05"}
-        assert list(result["method"]) == ["loss", "zlib"]
+        # Check EvaluationResult structure
+        assert isinstance(result, EvaluationResult)
+        assert isinstance(result.results_df, pd.DataFrame)
+        assert set(result.results_df.columns) == {"method", "auroc", "fpr95", "tpr05"}
+        assert list(result.results_df["method"]) == ["loss", "zlib"]
         # Check that metric values are in percentage format
         for col in ["auroc", "fpr95", "tpr05"]:
-            for val in result[col]:
+            for val in result.results_df[col]:
                 assert isinstance(val, str) and val.endswith("%")
+        # Check detailed_results
+        assert len(result.detailed_results) == 2
+        assert result.detailed_results[0]["method_name"] == "loss"
+        # Check data_stats
+        assert result.data_stats["num_samples"] == 4
 
     def test_evaluate_metrics_correctness(self, config, mock_data_loader, mock_model_loader):
         # Check that when one method has perfect score and label match
@@ -101,7 +107,7 @@ class TestEvaluator:
         evaluator = Evaluator(mock_data_loader, mock_model_loader, [method])
         result = evaluator.evaluate(config)
         # AUROCが100%になること
-        assert result.loc[0, "auroc"] == "100.0%"
+        assert result.results_df.loc[0, "auroc"] == "100.0%"
 
     def test_evaluate_multiple_methods(self, config, mock_data_loader, mock_model_loader):
         # Check that multiple method results are correctly aggregated
@@ -113,7 +119,7 @@ class TestEvaluator:
         method2.run.return_value = [0.8, 0.2, 0.7, 0.3]
         evaluator = Evaluator(mock_data_loader, mock_model_loader, [method1, method2])
         result = evaluator.evaluate(config)
-        assert list(result["method"]) == ["loss", "zlib"]
+        assert list(result.results_df["method"]) == ["loss", "zlib"]
 
     def test_evaluate_error_handling(self, config, mock_data_loader, mock_model_loader):
         # Check that when a method throws an exception
@@ -131,10 +137,10 @@ class TestEvaluator:
         expected_methods = [
             "loss", "lower", "zlib", "mink_0.1", "pac", "recall"
         ]
-        assert set(result["method"]) == set(expected_methods)
+        assert set(result.results_df["method"]) == set(expected_methods)
         # Check that metric values are in percentage format
         for col in ["auroc", "fpr95", "tpr05"]:
-            for val in result[col]:
+            for val in result.results_df[col]:
                 assert isinstance(val, str) and val.endswith("%")
 
 class TestMetrics:
