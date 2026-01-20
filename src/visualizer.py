@@ -16,11 +16,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+matplotlib.use("Agg")  # Set non-GUI backend before importing pyplot
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_curve
-
-plt.rcParams["font.family"] = "DejaVu Sans"
 
 
 class Visualizer:
