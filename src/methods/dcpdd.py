@@ -70,6 +70,8 @@ def upadate_freq_dist(
 
 class DCPDDMethod(BaseMethod):
     """DC-PDD membership inference method"""
+    
+    requires_tokenizer: bool = True
 
     def __init__(self, method_config: dict[str, Any] = None) -> None:
         """Initialize DC-PDD method
@@ -94,11 +96,7 @@ class DCPDDMethod(BaseMethod):
         Returns:
             DC-PDD score
         """
-        token_log_probs = []
-        for prompt_logprob in output.prompt_logprobs:
-            if prompt_logprob is None:
-                continue
-            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+        token_log_probs = self._extract_token_log_probs(output)
 
         # tokens with first occurance in text
         indexes = []
