@@ -34,6 +34,13 @@ source .venv/bin/activate
 uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
 ```
 
+**Note**: When using T4 GPUs (e.g., Google Colab, Kaggle), set the environment variable to avoid attention backend issues:
+> ```bash
+> VLLM_ATTENTION_BACKEND=XFORMERS uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
+> ```
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19eOf6JSz6vPc7Im0tMw1Us04JxbAnXXx?usp=sharing)
+[![Open In Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/code/sishihara/fast-mia-config-sample-yaml)
+
 ## 📚 Supported MIA Methods
 
 Fast-MIA supports the following MIA methods:
