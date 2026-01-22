@@ -115,7 +115,7 @@ class TestEndToEndIntegration:
             assert output_path.exists()
             df = pd.read_csv(output_path)
             assert set(df.columns) >= {"method", "auroc", "fpr95", "tpr05"}
-            assert df["method"].dtype == object
+            assert pd.api.types.is_string_dtype(df["method"])
             assert len(df) == len(config.methods)
             for col in ["auroc", "fpr95", "tpr05"]:
                 for val in df[col]:
