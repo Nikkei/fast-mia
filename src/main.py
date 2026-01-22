@@ -15,7 +15,6 @@
 import argparse
 import logging
 import os
-import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -27,6 +26,7 @@ from .data_loader import DataLoader
 from .evaluator import Evaluator
 from .methods.factory import MethodFactory
 from .model_loader import ModelLoader
+from .result_writer import ResultWriter
 from .utils import fix_seed
 
 
@@ -133,12 +133,11 @@ def main() -> None:
     run_dir = output_dir / start_time.strftime("%Y%m%d-%H%M%S")
     run_dir.mkdir(parents=True, exist_ok=False)
 
+    result_writer = ResultWriter(run_dir, config, start_time)
+
     if args.detailed_report:
         # Detailed report mode: metadata, scores, and visualizations
-        from .result_writer import ResultWriter
         from .visualizer import Visualizer
-
-        result_writer = ResultWriter(run_dir, config, start_time)
 
         saved_paths = result_writer.save_all(
             results_df=eval_result.results_df,
@@ -156,20 +155,18 @@ def main() -> None:
             eval_result.labels,
         )
         saved_paths.update(figure_paths)
-
-        logging.info(f"\nAll outputs saved to: {run_dir}")
-        logging.info("Output files:")
-        for name, path in saved_paths.items():
-            logging.info(f"  - {name}: {path}")
     else:
-        # Default mode: simple output (results.csv and config.yaml only)
-        output_path = run_dir / "results.csv"
-        eval_result.results_df.to_csv(output_path, index=False)
-        logging.info(f"Results saved to {output_path}")
+        # Default mode: config.yaml, results.csv, report.txt
+        saved_paths = result_writer.save_default(
+            results_df=eval_result.results_df,
+            results=eval_result.detailed_results,
+            data_stats=eval_result.data_stats,
+        )
 
-        config_copy_path = run_dir / "config.yaml"
-        shutil.copy(config.config_path, config_copy_path)
-        logging.info(f"Config copied to {config_copy_path}")
+    logging.info(f"\nAll outputs saved to: {run_dir}")
+    logging.info("Output files:")
+    for name, path in saved_paths.items():
+        logging.info(f"  - {name}: {path}")
 
 
 if __name__ == "__main__":

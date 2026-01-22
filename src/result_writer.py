@@ -331,6 +331,30 @@ class ResultWriter:
         logging.info(f"Summary report saved to {report_path}")
         return report_path
 
+    def save_default(
+        self,
+        results_df: pd.DataFrame,
+        results: list[dict[str, Any]],
+        data_stats: dict[str, Any],
+    ) -> dict[str, Path]:
+        """Save default outputs (config, results.csv, report.txt)
+
+        Args:
+            results_df: DataFrame with evaluation results
+            results: List of method results with detailed info
+            data_stats: Data statistics
+
+        Returns:
+            Dictionary mapping output names to file paths
+        """
+        paths = {}
+
+        paths["config"] = self.copy_config()
+        paths["results_csv"] = self.save_results_csv(results_df)
+        paths["report"] = self.generate_summary_report(results_df, results, data_stats)
+
+        return paths
+
     def save_all(
         self,
         results_df: pd.DataFrame,
