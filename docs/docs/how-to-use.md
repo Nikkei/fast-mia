@@ -146,7 +146,8 @@ By default, Fast-MIA saves the following files in a timestamped folder:
 results/
 └── YYYYMMDD-HHMMSS/
     ├── config.yaml    # Copy of the configuration used
-    └── results.csv    # Summary metrics (AUROC, FPR@95, TPR@5)
+    ├── results.csv    # Summary metrics (AUROC, FPR@95, TPR@5)
+    └── report.txt     # Human-readable summary report
 ```
 
 ## Detailed Report Mode

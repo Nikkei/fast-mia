@@ -74,8 +74,9 @@ uv run --with 'vllm==0.10.2' python main.py --config config/your_own_configurati
 ### Output
 
 By default, results are saved to `results/YYYYMMDD-HHMMSS/`:
-- `results.csv` - Summary metrics (AUROC, FPR@95, TPR@5)
 - `config.yaml` - Copy of the configuration used
+- `results.csv` - Summary metrics (AUROC, FPR@95, TPR@5)
+- `report.txt` - Human-readable summary report
 
 ### Detailed Report Mode
 
