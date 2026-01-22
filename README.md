@@ -70,6 +70,14 @@ uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19eOf6JSz6vPc7Im0tMw1Us04JxbAnXXx?usp=sharing)
 [![Open In Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/code/sishihara/fast-mia-config-sample-yaml)
 
+### Detailed Report Mode
+
+For benchmarking with detailed outputs (metadata, per-sample scores, visualizations):
+
+```bash
+uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml --detailed-report
+```
+
 ## How to Use
 
 1. Create a configuration file (refer to `config/sample.yaml`)
