@@ -103,6 +103,7 @@ uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml --detail
 ```
 
 This generates:
+- `config.yaml` - Copy of the configuration used
 - `results.csv` - Summary metrics
 - `detailed_scores.csv` - Per-sample scores for each method
 - `metadata.json` / `metadata.yaml` - Execution conditions (model, data, git info, timing)
