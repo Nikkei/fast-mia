@@ -70,6 +70,14 @@ uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19eOf6JSz6vPc7Im0tMw1Us04JxbAnXXx?usp=sharing)
 [![Open In Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/code/sishihara/fast-mia-config-sample-yaml)
 
+### Detailed Report Mode
+
+For benchmarking with detailed outputs (metadata, per-sample scores, visualizations):
+
+```bash
+uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml --detailed-report
+```
+
 ## How to Use
 
 1. Create a configuration file (refer to `config/sample.yaml`)
@@ -78,6 +86,29 @@ uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml
 ```bash
 uv run --with 'vllm==0.10.2' python main.py --config config/your_own_configuration.yaml
 ```
+
+### Output
+
+By default, results are saved to `results/YYYYMMDD-HHMMSS/`:
+- `config.yaml` - Copy of the configuration used
+- `results.csv` - Summary metrics (AUROC, FPR@95, TPR@5)
+- `report.txt` - Human-readable summary report
+
+### Detailed Report Mode
+
+For benchmarking and paper-ready outputs, use `--detailed-report`:
+
+```bash
+uv run --with 'vllm==0.10.2' python main.py --config config/sample.yaml --detailed-report
+```
+
+This generates:
+- `config.yaml` - Copy of the configuration used
+- `results.csv` - Summary metrics
+- `detailed_scores.csv` - Per-sample scores for each method
+- `metadata.json` / `metadata.yaml` - Execution conditions (model, data, git info, timing)
+- `report.txt` - Human-readable summary
+- `figures/` - ROC curves, score distributions, metrics comparison
 
 Please visit our [How to Use](https://nikkei.github.io/fast-mia/how-to-use/) to learn more.
 

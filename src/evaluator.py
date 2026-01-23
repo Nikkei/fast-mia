@@ -14,6 +14,7 @@
 
 import logging
 from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import Any
 
 import pandas as pd
@@ -23,6 +24,17 @@ from .data_loader import DataLoader
 from .methods import BaseMethod
 from .model_loader import ModelLoader
 from .utils import get_metrics
+
+
+@dataclass
+class EvaluationResult:
+    """Container for evaluation results with detailed information"""
+
+    results_df: pd.DataFrame
+    detailed_results: list[dict[str, Any]]
+    labels: list[int]
+    data_stats: dict[str, Any]
+    cache_stats: dict[str, Any] = field(default_factory=dict)
 
 
 class Evaluator:
@@ -53,14 +65,14 @@ class Evaluator:
     def evaluate(
         self,
         config: Config,
-    ) -> pd.DataFrame:
+    ) -> EvaluationResult:
         """Evaluate membership inference attacks on data with specified number of words
 
         Args:
             config: Configuration
 
         Returns:
-            DataFrame of evaluation results
+            EvaluationResult containing DataFrame, detailed results, labels, and stats
         """
         # Get required parameters from config
         text_length = config.data.get("text_length", 32)
@@ -69,6 +81,13 @@ class Evaluator:
 
         # Get data
         texts, labels = self.data_loader.get_data(text_length)
+
+        # Calculate data statistics
+        data_stats = {
+            "num_samples": len(texts),
+            "num_members": sum(labels),
+            "num_nonmembers": len(labels) - sum(labels),
+        }
 
         # Get sampling parameters
         sampling_params = self.model_loader.get_sampling_params(
@@ -82,6 +101,8 @@ class Evaluator:
 
         # Evaluate with each method
         results = defaultdict(list)
+        detailed_results = []
+
         for method in self.methods:
             # Build arguments based on method requirements
             args = [texts]
@@ -99,13 +120,29 @@ class Evaluator:
             # Calculate metrics
             auroc, fpr95, tpr05 = get_metrics(scores, labels)
 
-            # Add results
+            # Add results for DataFrame
             results["method"].append(method.method_name)
             results["auroc"].append(f"{auroc:.1%}")
             results["fpr95"].append(f"{fpr95:.1%}")
             results["tpr05"].append(f"{tpr05:.1%}")
 
-        # Log cache stats after evaluation
-        logging.info(f"Cache stats after evaluation: {BaseMethod.get_cache_stats()}")
+            # Add detailed results for visualization
+            detailed_results.append({
+                "method_name": method.method_name,
+                "scores": scores,
+                "auroc": auroc,
+                "fpr95": fpr95,
+                "tpr05": tpr05,
+            })
 
-        return pd.DataFrame(results)
+        # Get cache stats after evaluation
+        cache_stats = BaseMethod.get_cache_stats()
+        logging.info(f"Cache stats after evaluation: {cache_stats}")
+
+        return EvaluationResult(
+            results_df=pd.DataFrame(results),
+            detailed_results=detailed_results,
+            labels=labels,
+            data_stats=data_stats,
+            cache_stats=cache_stats,
+        )
