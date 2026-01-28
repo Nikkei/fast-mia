@@ -101,17 +101,17 @@ class DCPDDMethod(BaseMethod):
         # tokens with first occurance in text
         indexes = []
         current_ids = []
-        for i, input_id in enumerate(input_ids):
+        for i, input_id in enumerate(input_ids[1:]):
             if input_id not in current_ids:
                 indexes.append(i)
                 current_ids.append(input_id)
 
-        x_prob = np.array(token_log_probs)[indexes]
+        x_prob = np.exp(token_log_probs)[indexes]
         x_freq = np.array(freq_dist)[np.array(input_ids)[indexes]]
         eps = 1e-10
         ce = x_prob * np.log(1 / (x_freq + eps))
         ce[ce > self.alpha] = self.alpha
-        dcpdd_score = np.mean(ce)
+        dcpdd_score = -np.mean(ce)
 
         return dcpdd_score
 
@@ -150,7 +150,7 @@ class DCPDDMethod(BaseMethod):
             download_c4_data(self.file_num)
 
             # calculate frequency distribution from C4 data
-            freq_dist = [0] * len(tokenizer)
+            freq_dist = [0] * model.llm_engine.model_config.hf_config.vocab_size
 
             for i in range(self.file_num):
                 fname = f"c4-train.{i:05d}-of-01024.json.gz"
