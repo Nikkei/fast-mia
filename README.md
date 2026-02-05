@@ -29,6 +29,7 @@ The identifier is the name used in this framework's configuration.
 | Baseline | **LOSS** (`loss`) | Uses the model's loss |
 || **PPL/zlib** (`zlib`) | Uses the ratio of information content calculated by Zlib compression |
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
+|| **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |
 || **PAC** (`pac`) | https://github.com/yyy01/PAC |
 || **ReCaLL** (`recall`) | https://github.com/ruoyuxie/recall |
@@ -87,6 +88,7 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 |                  | Min-K% Prob (K=0.5)     | 69.7 / 69.7 | 12s / 57s (×4.75)            | 82.5 / 82.5  | 18.1 / 18.1 |
 |                  | Min-K% Prob (K=0.8)     | 69.5 / 69.5 | 12s / 57s (×4.75)            | 84.3 / 84.3  | 18.1 / 18.3 |
 |                  | Min-K% Prob (K=1.0)     | 69.4 / 69.4 | 12s / 57s (×4.75)            | 84.3 / 84.3  | 18.3 / 18.3 |
+|                  | DC-PDD                  | 67.4 / 67.4 | 12s / 57s (×4.75)            | 84.8 / 84.8  | 12.4 / 12.4 |
 | text alternation | Lowercase               | 64.1 / 64.1 | 25s / 1m59s (×4.76)          | 83.5 / 83.8  | 11.6 / 11.6 |
 |                  | PAC                     | 73.3 / 73.4 | 1m17s / 6m24s (×4.99)        | 82.3 / 77.9  | 27.6 / 24.3 |
 |                  | ReCaLL                  | 90.7 / 90.3 | 55s / 2m10s (×2.36)          | 28.5 / 34.7  | 50.4 / 48.8 |

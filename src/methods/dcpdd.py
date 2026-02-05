@@ -57,11 +57,9 @@ def upadate_freq_dist(
     max_token_length: int,
 ) -> list[int]:
     example_texts = [example["text"] for example in examples]
-    logging.info("encoding start")
     example_input_ids = tokenizer.batch_encode_plus(
         example_texts, truncation=True, max_length=max_token_length
     )["input_ids"]
-    logging.info("encoding end")
     for input_ids in example_input_ids:
         for token_id in input_ids:
             freq_dist[token_id] += 1
@@ -101,7 +99,7 @@ class DCPDDMethod(BaseMethod):
         # tokens with first occurance in text
         indexes = []
         current_ids = []
-        for i, input_id in enumerate(input_ids[1:]):
+        for i, input_id in enumerate(input_ids):
             if input_id not in current_ids:
                 indexes.append(i)
                 current_ids.append(input_id)
@@ -146,6 +144,8 @@ class DCPDDMethod(BaseMethod):
             with cache_path.open() as f:
                 freq_dist = json.load(f)
         else:
+            logging.info("Calculating frequency distribution. It takes about ~30 minutes.")
+            logging.info("Once calculated, it will be cached and calculation is not required next time.")
             # Download C4 data files
             download_c4_data(self.file_num)
 
@@ -154,6 +154,7 @@ class DCPDDMethod(BaseMethod):
 
             for i in range(self.file_num):
                 fname = f"c4-train.{i:05d}-of-01024.json.gz"
+                logging.info(f"Processing {fname}...")
                 with gzip.open(
                     Path("data") / fname, "rt", encoding="utf-8"
                 ) as f:
@@ -165,7 +166,7 @@ class DCPDDMethod(BaseMethod):
                         examples, tokenizer, freq_dist, self.max_token_length
                     )
 
-            logging.info(f"Saving freq_dist to {cache_path}")
+            logging.info(f"Saving frequency distribution to {cache_path}")
             with cache_path.open("w") as f:
                 json.dump(freq_dist, f)
 
@@ -176,7 +177,7 @@ class DCPDDMethod(BaseMethod):
 
         # Calculate scores from outputs
         scores = [
-            self.process_output(output, tokenizer.encode(text), freq_dist)
+            self.process_output(output, tokenizer.encode(text)[1:], freq_dist)
             for output, text in zip(outputs, texts, strict=False)
         ]
 

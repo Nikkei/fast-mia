@@ -130,6 +130,7 @@ Available method types and their parameters:
 | `recall` | https://github.com/ruoyuxie/recall | `num_shots` (number of prefix texts, default `10`), `pass_window` (skip max-length trimming, default `False`). |
 | `conrecall` | https://github.com/WangCheng0116/CON-RECALL | Same as `recall` plus `gamma` (ratio of member prefixes loss, default `0.5`). |
 | `samia` | https://github.com/nlp-titech/samia | `num_samples` (number of samples, default `5`), `prefix_ratio` (ratio of prefix, default `0.5`), `zlib` (Use Zlib, default `True`). |
+| `dcpdd` | https://github.com/zhang-wei-chao/DC-PDD | `file_num` (number of C4 text files, default `15`), `max_token_length` (max token length, default `1024`), `alpha` (hyperparameter, default `0.01`). |
 
 ### `output_dir`
 
