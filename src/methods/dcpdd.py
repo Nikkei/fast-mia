@@ -50,7 +50,7 @@ def download_c4_data(file_num: int) -> None:
             logging.error(f"Failed to download {fname}: {e}")
 
 
-def upadate_freq_dist(
+def update_freq_dist(
     examples: list[str],
     tokenizer: AnyTokenizer,
     freq_dist: list[int],
@@ -162,7 +162,7 @@ class DCPDDMethod(BaseMethod):
                     for example in f:
                         example = json.loads(example)
                         examples.append(example)
-                    freq_dist = upadate_freq_dist(
+                    freq_dist = update_freq_dist(
                         examples, tokenizer, freq_dist, self.max_token_length
                     )
 

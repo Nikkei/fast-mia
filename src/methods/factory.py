@@ -25,6 +25,7 @@ from .recall import ReCaLLMethod
 from .samia import SaMIAMethod
 from .zlib import ZlibMethod
 
+
 METHOD_BUILDERS = {
     "loss": LossMethod,
     "lower": LowerMethod,
