@@ -57,6 +57,7 @@ Fast-MIA supports the following MIA methods:
 | Baseline | **LOSS** (`loss`) | Uses the model's loss |
 | | **PPL/zlib** (`zlib`) | Uses the ratio of information content calculated by Zlib compression |
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
+| | **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |
 | | **PAC** (`pac`) | https://github.com/yyy01/PAC |
 | | **ReCaLL** (`recall`) | https://github.com/ruoyuxie/recall |

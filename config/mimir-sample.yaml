@@ -41,41 +41,46 @@ data:
 methods:
   - type: "loss"
     params: {}
-  # - type: "lower"
-  #   params: {}
-  # - type: "zlib"
-  #   params: {}
-  # - type: "mink"
-  #   params:
-  #     ratio: 0.1
-  # - type: "mink"
-  #   params:
-  #     ratio: 0.2
-  # - type: "mink"
-  #   params:
-  #     ratio: 0.3
-  # - type: "mink"
-  #   params:
-  #     ratio: 0.5
-  # - type: "mink"
-  #   params:
-  #     ratio: 0.8
-  # - type: "mink"
-  #   params:
-  #     ratio: 1.0
-  # - type: "recall"
-  #   params:
-  #     num_shots: 3
-  #     pass_window: false
-  # - type: "pac"
-  #   params:
-  #     alpha: 0.3
-  #     N: 5
-  # - type: "samia"
-  #   params:
-  #     num_samples: 5
-  #     prefix_ratio: 0.5
-  #     zlib: true
+  - type: "lower"
+    params: {}
+  - type: "zlib"
+    params: {}
+  - type: "mink"
+    params:
+      ratio: 0.1
+  - type: "mink"
+    params:
+      ratio: 0.2
+  - type: "mink"
+    params:
+      ratio: 0.3
+  - type: "mink"
+    params:
+      ratio: 0.5
+  - type: "mink"
+    params:
+      ratio: 0.8
+  - type: "mink"
+    params:
+      ratio: 1.0
+  - type: "recall"
+    params:
+      num_shots: 3
+      pass_window: false
+  - type: "pac"
+    params:
+      alpha: 0.3
+      N: 5
+  - type: "samia"
+    params:
+      num_samples: 5
+      prefix_ratio: 0.5
+      zlib: true
+  - type: "dcpdd"
+    params:
+      file_num: 15
+      max_token_length: 1024
+      alpha: 0.01
 
 # Output settings
 output_dir: "./results" 

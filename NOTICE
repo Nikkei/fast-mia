@@ -7,3 +7,4 @@ The following files contain modifications of original MIT or Apache 2.0 licensed
 - src/methods/recall.py: Modified from [recall](https://github.com/ruoyuxie/recall) to support vLLM
 - src/methods/conrecall.py: Modified from [CON-RECALL](https://github.com/WangCheng0116/CON-RECALL) to support vLLM
 - src/methods/samia.py: Modified from [samia](https://github.com/nlp-titech/samia) to support vLLM
+- src/methods/dcpdd.py: Modified from [DC-PDD](https://github.com/zhang-wei-chao/DC-PDD) to support vLLM
