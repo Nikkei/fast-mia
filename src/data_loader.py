@@ -123,11 +123,13 @@ class DataLoader:
             )
 
         if text_length:
-            # Split by number of words (vectorized)
-            texts = self.data[self.text_column].apply(
-                lambda text: " ".join(text.split()[:text_length])
-            ).tolist()
-            labels = self.data[self.label_column].tolist()
+            # Split by number of words
+            texts = []
+            labels = []
+            for _, row in self.data.iterrows():
+                text = " ".join(row[self.text_column].split()[:text_length])
+                texts.append(text)
+                labels.append(row[self.label_column])
 
             return texts, labels
 
