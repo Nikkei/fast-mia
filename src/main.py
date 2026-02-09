@@ -89,7 +89,7 @@ def main() -> None:
             )
 
         data_loader = DataLoader.load_mimir(
-            data_path=config.data.get("data_path"),
+            data_path=data_path,
             token=token,
         )
     else:
