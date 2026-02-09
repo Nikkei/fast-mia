@@ -126,10 +126,13 @@ class DataLoader:
             # Split by number of words
             texts = []
             labels = []
+
             for _, row in self.data.iterrows():
-                text = " ".join(row[self.text_column].split()[:text_length])
-                texts.append(text)
-                labels.append(row[self.label_column])
+                text = row[self.text_column]
+                label = row[self.label_column]
+
+                texts.append(" ".join(text.split()[:text_length]))
+                labels.append(label)
 
             return texts, labels
 
