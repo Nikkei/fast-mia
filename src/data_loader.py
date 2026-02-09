@@ -106,7 +106,8 @@ class DataLoader:
         """
         if self.data is None:
             raise ValueError(
-                "Data is not loaded. Please call load_data() or load_wikimia()."
+                "Data is not loaded. Use DataLoader(data_path=...), "
+                "DataLoader.load_wikimia(), or DataLoader.load_mimir()."
             )
 
         required_columns = {self.text_column, self.label_column}
@@ -122,16 +123,11 @@ class DataLoader:
             )
 
         if text_length:
-            # Split by number of words
-            texts = []
-            labels = []
-
-            for _, row in self.data.iterrows():
-                text = row[self.text_column]
-                label = row[self.label_column]
-
-                texts.append(" ".join(text.split()[:text_length]))
-                labels.append(label)
+            # Split by number of words (vectorized)
+            texts = self.data[self.text_column].apply(
+                lambda text: " ".join(text.split()[:text_length])
+            ).tolist()
+            labels = self.data[self.label_column].tolist()
 
             return texts, labels
 
