@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import random
-from copy import deepcopy
 from typing import Any
 
 import numpy as np
@@ -58,7 +57,6 @@ def eda(sentence: str, alpha: float, num_aug: int) -> list[str]:
             a_words = random_swap(words, n_rs)
             augmented_sentences.append(" ".join(a_words))
 
-    augmented_sentences = [sentence for sentence in augmented_sentences]
     random.shuffle(augmented_sentences)
     if num_aug >= 1:
         augmented_sentences = augmented_sentences[:num_aug]
@@ -130,7 +128,7 @@ class PACMethod(BaseMethod):
         eda_texts = []
         for text in texts:
             eda_text = eda(text, self.alpha, self.N)
-            eda_texts.extend(deepcopy(eda_text))
+            eda_texts.extend(eda_text)
 
         outputs = self.get_outputs(
             texts, model, sampling_params, lora_request, data_config
