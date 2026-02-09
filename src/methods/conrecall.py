@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import random
 from typing import Any
 
 import numpy as np
@@ -23,50 +22,11 @@ from vllm.outputs import RequestOutput
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 
 from .base import BaseMethod
-
-
-def extract_prefix(texts: list[str], num_shots: int) -> list[str]:
-    random.shuffle(texts)
-    num_shots = int(num_shots)
-    prefix = texts[:num_shots]
-
-    return prefix
-
-
-## https://github.com/ruoyuxie/recall/blob/main/src/run.py
-def process_prefix(
-    model: LLM,
-    tokenizer: AnyTokenizer,
-    prefix: list[str],
-    avg_length: int,
-    pass_window: bool,
-    num_shots: int,
-) -> tuple[list[str], int]:
-    if pass_window:
-        return prefix, num_shots
-    max_length = model.llm_engine.get_model_config().max_model_len
-    token_counts = [len(tokenizer.encode(shot)) for shot in prefix]
-    target_token_count = avg_length
-    total_tokens = sum(token_counts) + target_token_count
-    if total_tokens <= max_length:
-        return prefix, num_shots
-    # Determine the maximum number of shots that can fit within the max_length
-    max_shots = 0
-    cumulative_tokens = target_token_count
-    for count in token_counts:
-        if cumulative_tokens + count <= max_length:
-            max_shots += 1
-            cumulative_tokens += count
-        else:
-            break
-    # Truncate the prefix to include only the maximum number of shots
-    truncated_prefix = prefix[-max_shots:]
-    num_shots = max_shots
-    return truncated_prefix, num_shots
+from .prefix_utils import compute_prefix_loss, extract_prefix, process_prefix
 
 
 class CONReCaLLMethod(BaseMethod):
-    """ReCaLL membership inference method"""
+    """Con-ReCall membership inference method"""
 
     requires_labels: bool = True
     requires_tokenizer: bool = True
@@ -88,22 +48,12 @@ class CONReCaLLMethod(BaseMethod):
 
         Args:
             output: Model output
+            prefix_token_length: Number of prefix tokens to exclude
 
         Returns:
             Loss
         """
-        # Get log-probabilities for each token
-        token_log_probs = []
-        for i, prompt_logprob in enumerate(output.prompt_logprobs):
-            # Do not include prefix part in loss calculation
-            if i < prefix_token_length:
-                continue
-            if prompt_logprob is None:
-                continue
-            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
-
-        loss = -np.mean(token_log_probs)
-        return loss
+        return compute_prefix_loss(output, prefix_token_length)
 
     def run(
         self,
@@ -130,10 +80,10 @@ class CONReCaLLMethod(BaseMethod):
         """
         # Get texts with label 0
         member_texts = [
-            text for text, label in zip(texts, labels, strict=False) if label == 1
+            text for text, label in zip(texts, labels, strict=True) if label == 1
         ]
         nonmembership_texts = [
-            text for text, label in zip(texts, labels, strict=False) if label == 0
+            text for text, label in zip(texts, labels, strict=True) if label == 0
         ]
         # Randomly select num_shots texts
         member_prefix = extract_prefix(member_texts, self.num_shots)
@@ -225,7 +175,7 @@ class CONReCaLLMethod(BaseMethod):
                 member_conditional_losses,
                 nonmember_conditional_losses,
                 losses,
-                strict=False,
+                strict=True,
             )
         ]
 
