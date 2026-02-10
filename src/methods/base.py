@@ -34,8 +34,6 @@ class BaseMethod(ABC):
     _cache_stats = {
         "model_hits": 0,
         "model_misses": 0,
-        "score_hits": 0,
-        "score_misses": 0,
     }
 
     # Method requirements (override in subclasses as needed)
@@ -99,7 +97,7 @@ class BaseMethod(ABC):
             Cache key
         """
         # Hash each text
-        text_hashes = [hashlib.md5(text.encode()).hexdigest() for text in sorted(texts)]
+        text_hashes = [hashlib.md5(text.encode()).hexdigest() for text in texts]
 
         # Concatenate all text hashes and hash again
         texts_hash = hashlib.md5("|".join(text_hashes).encode()).hexdigest()
@@ -130,13 +128,6 @@ class BaseMethod(ABC):
         else:
             stats["model_hit_rate"] = "0.00%"
 
-        # Score cache hit rate
-        score_total = stats["score_hits"] + stats["score_misses"]
-        if score_total > 0:
-            stats["score_hit_rate"] = f"{stats['score_hits'] / score_total:.2%}"
-        else:
-            stats["score_hit_rate"] = "0.00%"
-
         # Cache size
         stats["model_cache_size"] = len(cls._model_cache)
 
@@ -144,8 +135,12 @@ class BaseMethod(ABC):
 
     @classmethod
     def clear_cache(cls) -> None:
-        """Clear cache"""
+        """Clear cache and reset statistics"""
         cls._model_cache.clear()
+        cls._cache_stats = {
+            "model_hits": 0,
+            "model_misses": 0,
+        }
         logging.info("Cache cleared")
 
     @classmethod
