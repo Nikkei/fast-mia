@@ -106,7 +106,8 @@ class DataLoader:
         """
         if self.data is None:
             raise ValueError(
-                "Data is not loaded. Please call load_data() or load_wikimia()."
+                "Data is not loaded. Use DataLoader(data_path=...), "
+                "DataLoader.load_wikimia(), or DataLoader.load_mimir()."
             )
 
         required_columns = {self.text_column, self.label_column}
