@@ -132,7 +132,7 @@ class SaMIAMethod(BaseMethod):
         outputs = self.get_outputs(
             prefixes, model, samia_params, lora_request, data_config
         )
-        text_length = data_config.get("text_length", 32) if data_config else 32
+        text_length = data_config.get("text_length")
         scores = []
         for text, output in zip(texts, outputs, strict=True):
             suffix_ref = get_suffix(
