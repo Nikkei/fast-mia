@@ -25,9 +25,9 @@ from .base import BaseMethod
 
 
 def get_prefix(text: str, prefix_ratio: float) -> str:
-    num_words = len(text.split())
-    num_prefix_words = int(num_words * prefix_ratio)
-    prefix = " ".join(text.split()[:num_prefix_words])
+    words = text.split()
+    num_prefix_words = int(len(words) * prefix_ratio)
+    prefix = " ".join(words[:num_prefix_words])
     return prefix
 
 
@@ -77,6 +77,10 @@ class SaMIAMethod(BaseMethod):
         super().__init__("samia", method_config)
         # Default settings
         self.num_samples = self.method_config.get("num_samples", 5)
+        if self.num_samples < 1:
+            raise ValueError(
+                f"SaMIA num_samples must be >= 1, got {self.num_samples}"
+            )
         self.prefix_ratio = self.method_config.get("prefix_ratio", 0.5)
         self.zlib = self.method_config.get("zlib", True)
 
@@ -115,7 +119,7 @@ class SaMIAMethod(BaseMethod):
             List of SaMIA scores
         """
 
-        prefixs = [get_prefix(text, self.prefix_ratio) for text in texts]
+        prefixes = [get_prefix(text, self.prefix_ratio) for text in texts]
 
         samia_params = SamplingParams(
             max_tokens=1024,
@@ -126,21 +130,22 @@ class SaMIAMethod(BaseMethod):
         )
 
         outputs = self.get_outputs(
-            prefixs, model, samia_params, lora_request, data_config
+            prefixes, model, samia_params, lora_request, data_config
         )
+        text_length = data_config.get("text_length")
         scores = []
         for text, output in zip(texts, outputs, strict=True):
             suffix_ref = get_suffix(
-                text, 1 - self.prefix_ratio, data_config.get("text_length")
+                text, 1 - self.prefix_ratio, text_length
             )
             rouge_scores = []
             for i in range(self.num_samples):
                 output_text = output.outputs[i].text
                 suffix_cand = get_suffix(
-                    output_text, 1 - self.prefix_ratio, data_config.get("text_length")
+                    output_text, 1 - self.prefix_ratio, text_length
                 )
                 if self.zlib:
-                    if data_config.get("space_delimited_language"):
+                    if data_config.get("space_delimited_language", True):
                         zlib_cand = zlib.compress(" ".join(suffix_cand).encode("utf-8"))
                     else:
                         zlib_cand = zlib.compress("".join(suffix_cand).encode("utf-8"))
