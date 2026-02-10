@@ -80,10 +80,10 @@ class CONReCaLLMethod(BaseMethod):
         """
         # Get texts with label 0
         member_texts = [
-            text for text, label in zip(texts, labels, strict=True) if label == 1
+            text for text, label in zip(texts, labels, strict=False) if label == 1
         ]
         nonmembership_texts = [
-            text for text, label in zip(texts, labels, strict=True) if label == 0
+            text for text, label in zip(texts, labels, strict=False) if label == 0
         ]
         # Randomly select num_shots texts
         member_prefix = extract_prefix(member_texts, self.num_shots)
@@ -175,7 +175,7 @@ class CONReCaLLMethod(BaseMethod):
                 member_conditional_losses,
                 nonmember_conditional_losses,
                 losses,
-                strict=True,
+                strict=False,
             )
         ]
 
