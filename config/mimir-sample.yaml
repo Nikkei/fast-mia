@@ -2,7 +2,6 @@
 model:
   model_id: "Qwen/Qwen2.5-0.5B-Instruct"
   trust_remote_code: true
-  max_seq_len_to_capture: 100
   max_num_seqs: 1
   enable_lora: false # Set to true to enable LoRA adapters
 

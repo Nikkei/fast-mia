@@ -58,7 +58,7 @@ def process_prefix(
     """
     if pass_window:
         return prefix, num_shots
-    max_length = model.llm_engine.get_model_config().max_model_len
+    max_length = model.llm_engine.model_config.max_model_len
     token_counts = [len(tokenizer.encode(shot)) for shot in prefix]
     target_token_count = avg_length
     total_tokens = sum(token_counts) + target_token_count
