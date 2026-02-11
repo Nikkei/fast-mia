@@ -79,7 +79,7 @@ class ReCaLLMethod(BaseMethod):
         """
         # Get texts with label 0
         nonmembership_texts = [
-            text for text, label in zip(texts, labels, strict=False) if label == 0
+            text for text, label in zip(texts, labels, strict=True) if label == 0
         ]
         # Randomly select num_shots texts
         nonmember_prefix = extract_prefix(nonmembership_texts, self.num_shots)
@@ -126,7 +126,7 @@ class ReCaLLMethod(BaseMethod):
         eps = 1e-10
         scores = [
             conditional_loss / (loss + eps)
-            for conditional_loss, loss in zip(conditional_losses, losses, strict=False)
+            for conditional_loss, loss in zip(conditional_losses, losses, strict=True)
         ]
 
         return scores

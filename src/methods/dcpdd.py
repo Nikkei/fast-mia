@@ -178,7 +178,7 @@ class DCPDDMethod(BaseMethod):
         # Calculate scores from outputs
         scores = [
             self.process_output(output, tokenizer.encode(text)[1:], freq_dist)
-            for output, text in zip(outputs, texts, strict=False)
+            for output, text in zip(outputs, texts, strict=True)
         ]
 
         return scores
