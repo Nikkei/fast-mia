@@ -81,11 +81,11 @@ methods:
       num_samples: 5
       prefix_ratio: 0.5
       zlib: true
-  - type: "dcpdd"
-    params:
-      file_num: 15
-      max_token_length: 1024
-      alpha: 0.01
+  # - type: "dcpdd"
+  #   params:
+  #     file_num: 15
+  #     max_token_length: 1024
+  #     alpha: 0.01
 
 # Output settings
 output_dir: "./results" 
