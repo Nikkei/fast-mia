@@ -1,0 +1,29 @@
+{
+    "packages": {
+        ".": {
+            "package-type": "python",
+            "release-type": "python",
+            "changelog-sections": [
+                { "type": "change", "section": "Changes" },
+                { "type": "feat", "section": "Features" },
+                { "type": "fix", "section": "Bug Fixes" },
+                { "type": "revert", "section": "Reverts" },
+                { "type": "docs", "section": "Documentation", "hidden": true },
+                { "type": "perf", "section": "Performance Improvements", "hidden": true },
+                { "type": "chore", "section": "Miscellaneous Chores", "hidden": true },
+                { "type": "test", "section": "Tests", "hidden": true },
+                { "type": "style", "section": "Styles", "hidden": true },
+                { "type": "refactor", "section": "Code Refactoring", "hidden": true },
+                { "type": "ci", "section": "Continuous Integration", "hidden": true }
+            ],
+            "bump-minor-pre-major": true,
+            "bump-patch-for-minor-pre-major": true,
+            "include-component-in-tag": false
+        }
+    },
+    "plugins": [
+        {
+            "type": "sentence-case"
+        }
+    ]
+}
