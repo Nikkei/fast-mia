@@ -2,7 +2,6 @@
 model:
   model_id: "huggyllama/llama-30b"
   trust_remote_code: true
-  max_seq_len_to_capture: 1024
   max_num_seqs: 256
 
 # sampling_parameters settings
