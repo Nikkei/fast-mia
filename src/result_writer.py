@@ -114,9 +114,6 @@ class ResultWriter:
             "model": {
                 "model_id": self.config.model.get("model_id", "unknown"),
                 "trust_remote_code": self.config.model.get("trust_remote_code", False),
-                "max_seq_len_to_capture": self.config.model.get(
-                    "max_seq_len_to_capture"
-                ),
                 "enable_lora": self.config.model.get("enable_lora", False),
             },
             "data": {
@@ -249,7 +246,6 @@ class ResultWriter:
             "-" * 60,
             f"Model: {self.config.model.get('model_id', 'unknown')}",
             f"Trust Remote Code: {self.config.model.get('trust_remote_code', False)}",
-            f"Max Sequence Length: {self.config.model.get('max_seq_len_to_capture', 'default')}",
             "",
             "-" * 60,
             "DATA CONFIGURATION",
