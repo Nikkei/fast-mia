@@ -22,6 +22,7 @@ from .mink import MinKMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .samia import SaMIAMethod
+from .wbc import WBCMethod
 from .zlib import ZlibMethod
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "SaMIAMethod",
     "CONReCaLLMethod",
     "DCPDDMethod",
+    "WBCMethod",
 ]

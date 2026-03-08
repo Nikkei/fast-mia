@@ -23,6 +23,7 @@ from .mink import MinKMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .samia import SaMIAMethod
+from .wbc import WBCMethod
 from .zlib import ZlibMethod
 
 METHOD_BUILDERS = {
@@ -35,6 +36,7 @@ METHOD_BUILDERS = {
     "conrecall": CONReCaLLMethod,
     "samia": SaMIAMethod,
     "dcpdd": DCPDDMethod,
+    "wbc": WBCMethod,
 }
 
 
@@ -47,7 +49,7 @@ class MethodFactory:
 
         Args:
             method_config: Method configuration
-                - type: Type of method ('loss', 'lower', 'zlib', 'mink', 'pac', 'recall', 'conrecall', 'samia', 'dcpdd')
+                - type: Type of method ('loss', 'lower', 'zlib', 'mink', 'pac', 'recall', 'conrecall', 'samia', 'dcpdd', 'wbc')
                 - params: Method-specific parameters
 
         Returns:
