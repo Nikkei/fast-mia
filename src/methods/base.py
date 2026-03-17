@@ -84,6 +84,7 @@ class BaseMethod(ABC):
     def _get_model_cache_key(
         texts: list[str],
         sampling_params: SamplingParams,
+        model: LLM,
         lora_request: LoRARequest | None = None,
     ) -> str:
         """Generate model cache key
@@ -91,6 +92,7 @@ class BaseMethod(ABC):
         Args:
             texts: List of texts
             sampling_params: Sampling parameters
+            model: LLM model used for inference
             lora_request: LoRA request
 
         Returns:
@@ -109,8 +111,15 @@ class BaseMethod(ABC):
         lora_str = ""
         if lora_request:
             lora_str = f"_{lora_request.lora_int_id}_{lora_request.lora_name}"
+            
+        # Extract model ID if available (vLLM specific)
+        model_id = ""
+        try:
+            model_id = getattr(model.llm_engine.model_config, "model", "")
+        except AttributeError:
+            pass
 
-        return f"{texts_hash}_{params_str}{lora_str}"
+        return f"{model_id}_{texts_hash}_{params_str}{lora_str}"
 
     @classmethod
     def get_cache_stats(cls) -> dict[str, Any]:
@@ -189,7 +198,7 @@ class BaseMethod(ABC):
 
         # Generate model cache key
         model_cache_key = self._get_model_cache_key(
-            texts, sampling_params, lora_request
+            texts, sampling_params, model, lora_request
         )
 
         # If in model cache, return cached outputs
