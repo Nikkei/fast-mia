@@ -132,6 +132,7 @@ Available method types and their parameters:
 |------|-------------|----------------|
 | `loss` | Uses the model's loss | – |
 | `zlib` | Uses the ratio of information content calculated by Zlib compression | – |
+| `ref` | Uses the difference in loss between the target model and a reference model | `reference_model` (required. Model configuration for the reference model, same fields as the `model` block). |
 | `lower` | Uses the ratio of loss after lowercasing the text | – |
 | `mink` | https://github.com/swj0419/detect-pretrain-code | `ratio` (`0.0–1.0`, default `0.5`). |
 | `pac` | https://github.com/yyy01/PAC | `alpha` (augmentation strength, default `0.3`), `N` (augmentations per sample, default `5`). |

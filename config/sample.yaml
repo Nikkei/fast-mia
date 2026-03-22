@@ -3,7 +3,6 @@ model:
   model_id: "Qwen/Qwen2.5-0.5B-Instruct"
   trust_remote_code: true
   max_num_seqs: 1
-  # gpu_memory_utilization: 0.4
   enable_lora: false # Set to true to enable LoRA adapters
 
 # LoRA settings (optional)
@@ -48,13 +47,6 @@ methods:
   - type: "mink"
     params:
       ratio: 0.1
-  # - type: "ref"
-  #   params:
-  #     reference_model:
-  #       model_id: "Qwen/Qwen2.5-0.5B"
-  #       trust_remote_code: true
-  #       max_num_seqs: 1
-  #       gpu_memory_utilization: 0.4
 
 # Output settings
 output_dir: "./results" 
