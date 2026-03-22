@@ -49,7 +49,7 @@ class MethodFactory:
 
         Args:
             method_config: Method configuration
-                - type: Type of method ('loss', 'lower', 'zlib', 'mink', 'pac', 'recall', 'conrecall', 'samia', 'dcpdd', 'ref)
+                - type: Type of method ('loss', 'lower', 'zlib', 'mink', 'pac', 'recall', 'conrecall', 'samia', 'dcpdd', 'ref')
                 - params: Method-specific parameters
 
         Returns:

@@ -7,9 +7,9 @@ from src.methods.lower import LowerMethod
 from src.methods.mink import MinKMethod
 from src.methods.pac import PACMethod
 from src.methods.recall import ReCaLLMethod
+from src.methods.ref import RefMethod
 from src.methods.samia import SaMIAMethod
 from src.methods.zlib import ZlibMethod
-from src.methods.ref import RefMethod
 
 class TestMethodFactory:
     @pytest.mark.parametrize("type_,cls,params", [

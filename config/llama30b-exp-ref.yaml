@@ -43,4 +43,4 @@ methods:
         gpu_memory_utilization: 0.2
 
 # Output settings
-output_dir: "./results" 
+output_dir: "./results"
