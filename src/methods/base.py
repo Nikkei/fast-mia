@@ -111,7 +111,7 @@ class BaseMethod(ABC):
         lora_str = ""
         if lora_request:
             lora_str = f"_{lora_request.lora_int_id}_{lora_request.lora_name}"
-            
+
         # Extract model ID if available (vLLM specific)
         model_id = ""
         try:

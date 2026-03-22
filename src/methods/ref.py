@@ -35,7 +35,9 @@ class RefMethod(BaseMethod):
 
         self.ref_model_config = self.method_config.get("reference_model")
         if not self.ref_model_config:
-            raise ValueError("Ref method requires a 'reference_model' configuration in params.")
+            raise ValueError(
+                "Ref method requires a 'reference_model' configuration in params."
+            )
 
         self.ref_model_id = self.ref_model_config.get("model_id")
         if not self.ref_model_id:
@@ -67,7 +69,7 @@ class RefMethod(BaseMethod):
         data_config: dict[str, Any] = None,
     ) -> list[float]:
         """Ref algorithm to calculate scores for a list of texts
-        
+
         Args:
             texts: List of texts
             model: LLM model (target)
@@ -79,7 +81,9 @@ class RefMethod(BaseMethod):
         """
         # Lazy load reference model
         if self.ref_model is None:
-            llm_kwargs = {k: v for k, v in self.ref_model_config.items() if k != "model_id"}
+            llm_kwargs = {
+                k: v for k, v in self.ref_model_config.items() if k != "model_id"
+            }
             logging.info(f"Loading reference model for Ref: {self.ref_model_id}")
             self.ref_model = LLM(model=self.ref_model_id, **llm_kwargs)
 
@@ -94,11 +98,14 @@ class RefMethod(BaseMethod):
             texts, self.ref_model, sampling_params, None, data_config
         )
 
-        target_losses = [self.process_output(target_output) for target_output in target_outputs]
+        target_losses = [
+            self.process_output(target_output) for target_output in target_outputs
+        ]
         ref_losses = [self.process_output(ref_output) for ref_output in ref_outputs]
 
         scores = [
-            target_loss - ref_loss for target_loss, ref_loss in zip(target_losses, ref_losses, strict=True)
+            target_loss - ref_loss
+            for target_loss, ref_loss in zip(target_losses, ref_losses, strict=True)
         ]
 
         return scores

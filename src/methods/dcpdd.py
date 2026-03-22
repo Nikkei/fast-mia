@@ -68,7 +68,7 @@ def update_freq_dist(
 
 class DCPDDMethod(BaseMethod):
     """DC-PDD membership inference method"""
-    
+
     requires_tokenizer: bool = True
 
     def __init__(self, method_config: dict[str, Any] = None) -> None:
@@ -144,8 +144,12 @@ class DCPDDMethod(BaseMethod):
             with cache_path.open() as f:
                 freq_dist = json.load(f)
         else:
-            logging.info("Calculating frequency distribution. It takes about ~30 minutes.")
-            logging.info("Once calculated, it will be cached and calculation is not required next time.")
+            logging.info(
+                "Calculating frequency distribution. It takes about ~30 minutes."
+            )
+            logging.info(
+                "Once calculated, it will be cached and calculation is not required next time."
+            )
             # Download C4 data files
             download_c4_data(self.file_num)
 
@@ -155,9 +159,7 @@ class DCPDDMethod(BaseMethod):
             for i in range(self.file_num):
                 fname = f"c4-train.{i:05d}-of-01024.json.gz"
                 logging.info(f"Processing {fname}...")
-                with gzip.open(
-                    Path("data") / fname, "rt", encoding="utf-8"
-                ) as f:
+                with gzip.open(Path("data") / fname, "rt", encoding="utf-8") as f:
                     examples = []
                     for example in f:
                         example = json.loads(example)

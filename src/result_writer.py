@@ -47,10 +47,7 @@ def _get_git_info() -> dict[str, str]:
             .strip()
         )
         git_info["is_dirty"] = (
-            subprocess.call(
-                ["git", "diff", "--quiet"], stderr=subprocess.DEVNULL
-            )
-            != 0
+            subprocess.call(["git", "diff", "--quiet"], stderr=subprocess.DEVNULL) != 0
         )
     except (subprocess.CalledProcessError, FileNotFoundError):
         git_info["commit_hash"] = "unknown"
@@ -265,26 +262,34 @@ class ResultWriter:
         for method_config in self.config.methods:
             method_type = method_config.get("type", "unknown")
             params = method_config.get("params", {})
-            params_str = ", ".join(f"{k}={v}" for k, v in params.items()) if params else "default"
+            params_str = (
+                ", ".join(f"{k}={v}" for k, v in params.items())
+                if params
+                else "default"
+            )
             lines.append(f"  - {method_type}: {params_str}")
 
-        lines.extend([
-            "",
-            "-" * 60,
-            "RESULTS SUMMARY",
-            "-" * 60,
-            "",
-            results_df.to_string(index=False),
-            "",
-            "-" * 60,
-            "BEST PERFORMERS",
-            "-" * 60,
-        ])
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                "RESULTS SUMMARY",
+                "-" * 60,
+                "",
+                results_df.to_string(index=False),
+                "",
+                "-" * 60,
+                "BEST PERFORMERS",
+                "-" * 60,
+            ]
+        )
 
         valid_results = [r for r in results if not pd.isna(r["auroc"])]
         if valid_results:
             best_auroc = max(valid_results, key=lambda x: x["auroc"])
-            lines.append(f"Best AUROC: {best_auroc['method_name']} ({best_auroc['auroc']:.3f})")
+            lines.append(
+                f"Best AUROC: {best_auroc['method_name']} ({best_auroc['auroc']:.3f})"
+            )
 
             best_fpr95 = min(
                 [r for r in valid_results if not pd.isna(r["fpr95"])],
@@ -306,19 +311,21 @@ class ResultWriter:
                     f"Best TPR@5%FPR: {best_tpr05['method_name']} ({best_tpr05['tpr05']:.3f})"
                 )
 
-        lines.extend([
-            "",
-            "-" * 60,
-            "OUTPUT FILES",
-            "-" * 60,
-            f"Results: {self.run_dir}/results.csv",
-            f"Detailed Scores: {self.run_dir}/detailed_scores.csv",
-            f"Metadata: {self.run_dir}/metadata.json",
-            f"Config: {self.run_dir}/config.yaml",
-            f"Figures: {self.run_dir}/figures/",
-            "",
-            "=" * 60,
-        ])
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                "OUTPUT FILES",
+                "-" * 60,
+                f"Results: {self.run_dir}/results.csv",
+                f"Detailed Scores: {self.run_dir}/detailed_scores.csv",
+                f"Metadata: {self.run_dir}/metadata.json",
+                f"Config: {self.run_dir}/config.yaml",
+                f"Figures: {self.run_dir}/figures/",
+                "",
+                "=" * 60,
+            ]
+        )
 
         report_path = self.run_dir / "report.txt"
         with report_path.open("w") as f:
