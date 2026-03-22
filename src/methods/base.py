@@ -114,10 +114,11 @@ class BaseMethod(ABC):
 
         # Extract model ID if available (vLLM specific)
         model_id = ""
-        try:
-            model_id = getattr(model.llm_engine.model_config, "model", "")
-        except AttributeError:
-            pass
+        llm_engine = getattr(model, "llm_engine", None)
+        if llm_engine is not None:
+            model_config = getattr(llm_engine, "model_config", None)
+            if model_config is not None:
+                model_id = getattr(model_config, "model", "")
 
         return f"{model_id}_{texts_hash}_{params_str}{lora_str}"
 
