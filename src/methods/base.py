@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import gc
 import hashlib
 import logging
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any
 
+import torch
 from vllm import LLM, SamplingParams
+from vllm.distributed.parallel_state import destroy_model_parallel
 from vllm.lora.request import LoRARequest
 from vllm.outputs import RequestOutput
 
@@ -226,6 +229,19 @@ class BaseMethod(ABC):
         self._trim_cache()
 
         return outputs
+
+    @staticmethod
+    def cleanup_model(model: LLM) -> None:
+        """Release GPU memory used by a vLLM model
+
+        Args:
+            model: LLM model to clean up
+        """
+        destroy_model_parallel()
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
+        logging.info("Released GPU memory for model.")
 
     def run(
         self,

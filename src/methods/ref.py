@@ -108,4 +108,8 @@ class RefMethod(BaseMethod):
             for target_loss, ref_loss in zip(target_losses, ref_losses, strict=True)
         ]
 
+        # Release GPU memory used by reference model
+        self.cleanup_model(self.ref_model)
+        self.ref_model = None
+
         return scores
