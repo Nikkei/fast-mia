@@ -21,6 +21,7 @@ from .lower import LowerMethod
 from .mink import MinKMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
+from .ref import RefMethod
 from .samia import SaMIAMethod
 from .zlib import ZlibMethod
 
@@ -36,4 +37,5 @@ __all__ = [
     "SaMIAMethod",
     "CONReCaLLMethod",
     "DCPDDMethod",
+    "RefMethod",
 ]

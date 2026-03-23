@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import gc
 import hashlib
 import logging
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any
 
+import torch
 from vllm import LLM, SamplingParams
+from vllm.distributed.parallel_state import destroy_model_parallel
 from vllm.lora.request import LoRARequest
 from vllm.outputs import RequestOutput
 
@@ -84,6 +87,7 @@ class BaseMethod(ABC):
     def _get_model_cache_key(
         texts: list[str],
         sampling_params: SamplingParams,
+        model: LLM,
         lora_request: LoRARequest | None = None,
     ) -> str:
         """Generate model cache key
@@ -91,6 +95,7 @@ class BaseMethod(ABC):
         Args:
             texts: List of texts
             sampling_params: Sampling parameters
+            model: LLM model used for inference
             lora_request: LoRA request
 
         Returns:
@@ -110,7 +115,15 @@ class BaseMethod(ABC):
         if lora_request:
             lora_str = f"_{lora_request.lora_int_id}_{lora_request.lora_name}"
 
-        return f"{texts_hash}_{params_str}{lora_str}"
+        # Extract model ID if available (vLLM specific)
+        model_id = ""
+        llm_engine = getattr(model, "llm_engine", None)
+        if llm_engine is not None:
+            model_config = getattr(llm_engine, "model_config", None)
+            if model_config is not None:
+                model_id = getattr(model_config, "model", "")
+
+        return f"{model_id}_{texts_hash}_{params_str}{lora_str}"
 
     @classmethod
     def get_cache_stats(cls) -> dict[str, Any]:
@@ -189,7 +202,7 @@ class BaseMethod(ABC):
 
         # Generate model cache key
         model_cache_key = self._get_model_cache_key(
-            texts, sampling_params, lora_request
+            texts, sampling_params, model, lora_request
         )
 
         # If in model cache, return cached outputs
@@ -216,6 +229,19 @@ class BaseMethod(ABC):
         self._trim_cache()
 
         return outputs
+
+    @staticmethod
+    def cleanup_model(model: LLM) -> None:
+        """Release GPU memory used by a vLLM model
+
+        Args:
+            model: LLM model to clean up
+        """
+        destroy_model_parallel()
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
+        logging.info("Released GPU memory for model.")
 
     def run(
         self,

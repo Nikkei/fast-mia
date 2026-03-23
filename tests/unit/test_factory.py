@@ -7,6 +7,7 @@ from src.methods.lower import LowerMethod
 from src.methods.mink import MinKMethod
 from src.methods.pac import PACMethod
 from src.methods.recall import ReCaLLMethod
+from src.methods.ref import RefMethod
 from src.methods.samia import SaMIAMethod
 from src.methods.zlib import ZlibMethod
 
@@ -21,6 +22,7 @@ class TestMethodFactory:
         ("samia", SaMIAMethod, {"num_samples": 3}),
         ("conrecall", CONReCaLLMethod, {"num_shots": 5}),
         ("dcpdd", DCPDDMethod, {"file_num": 10}),
+        ("ref", RefMethod, {"reference_model": {"model_id": "dummy"}}),
     ])
     def test_create_method(self, type_, cls, params):
         method = MethodFactory.create_method({"type": type_, "params": params})

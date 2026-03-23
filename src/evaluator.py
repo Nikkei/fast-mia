@@ -127,13 +127,15 @@ class Evaluator:
             results["tpr05"].append(f"{tpr05:.1%}")
 
             # Add detailed results for visualization
-            detailed_results.append({
-                "method_name": method.method_name,
-                "scores": scores,
-                "auroc": auroc,
-                "fpr95": fpr95,
-                "tpr05": tpr05,
-            })
+            detailed_results.append(
+                {
+                    "method_name": method.method_name,
+                    "scores": scores,
+                    "auroc": auroc,
+                    "fpr95": fpr95,
+                    "tpr05": tpr05,
+                }
+            )
 
         # Get cache stats after evaluation
         cache_stats = BaseMethod.get_cache_stats()
