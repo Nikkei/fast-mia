@@ -100,7 +100,7 @@ gcloud compute instances create "$INSTANCE_NAME" \
     --accelerator="type=${ACCELERATOR_TYPE},count=${ACCELERATOR_COUNT}" \
     --maintenance-policy=TERMINATE \
     --boot-disk-size="$BOOT_DISK_SIZE" \
-    --image-family=common-cu124-debian-12 \
+    --image-family=common-cu128-ubuntu-2204-nvidia-570 \
     --image-project=deeplearning-platform-release \
     --scopes=storage-full \
     --metadata="install-nvidia-driver=true"
@@ -132,7 +132,6 @@ tar -czf "$TMPTAR" \
     --exclude='__pycache__' \
     --exclude='.venv' \
     --exclude='results' \
-    --exclude='data' \
     --exclude='.ruff_cache' \
     .
 
