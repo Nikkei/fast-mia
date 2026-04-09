@@ -142,6 +142,42 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 - Dataset: WikiMIA (length: 32)
 - Configuration: The Fast-MIA experimental results were obtained using `config/llama30b-exp.yaml`.
 
+## Running on Google Cloud
+
+You can submit GPU jobs to Google Compute Engine using the provided scripts. The workflow creates a GPU instance, runs the evaluation, uploads results to Google Cloud Storage, and deletes the instance.
+
+### Prerequisites
+
+- `gcloud` CLI installed and authenticated
+- Sufficient GPU quota in the target zone (e.g., A100 in `us-central1-a`)
+- A GCS bucket for storing results
+
+### Usage
+
+```bash
+./gcp/submit_job.sh \
+  --config config/llama30b-exp.yaml \
+  --bucket gs://your-bucket/fast-mia-results
+```
+
+Options:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--config` | (required) | Path to the YAML configuration file |
+| `--bucket` | (required) | GCS bucket URI for results (e.g., `gs://my-bucket/results`) |
+| `--project` | gcloud default | GCP project ID |
+| `--zone` | `us-central1-a` | GCE zone |
+| `--machine-type` | `a2-highgpu-1g` | Machine type |
+| `--accelerator-type` | `nvidia-tesla-a100` | GPU type |
+| `--accelerator-count` | `1` | Number of GPUs |
+| `--boot-disk-size` | `200GB` | Boot disk size |
+| `--instance-name` | `fast-mia-job-<timestamp>` | Instance name |
+| `--extra-args` | – | Additional arguments passed to `main.py` (e.g., `"--seed 42 --detailed-report"`) |
+| `--keep-instance` | off | Keep the instance alive after the job finishes |
+
+Please visit our [Running on Google Cloud](https://nikkei.github.io/fast-mia/google-cloud/) documentation for more details.
+
 ## How to contribute
 
 Feel free to contact the [maintainers](https://github.com/Nikkei/fast-mia/blob/main/pyproject.toml#L8).

@@ -68,6 +68,8 @@ Fast-MIA supports the following MIA methods:
 
 ## 📖 Documentation
 
+- [How to Use](how-to-use.md) - CLI usage and configuration guide
+- [Running on Google Cloud](google-cloud.md) - Submit GPU jobs to GCE
 - [API Reference](api-reference.md) - Detailed API documentation
 
 ## 🔗 Links
