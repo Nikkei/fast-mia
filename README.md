@@ -144,12 +144,15 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 
 ## Running on Google Cloud
 
-You can submit GPU jobs to Google Compute Engine using the provided scripts. The workflow creates a GPU instance, runs the evaluation, uploads results to Google Cloud Storage, and deletes the instance.
+You can submit GPU jobs to Google Compute Engine using the provided scripts. The workflow creates an A100 80GB GPU instance, runs the evaluation, uploads results to Google Cloud Storage, and stops the instance (preserving model caches for reuse).
 
 ```bash
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
-  --bucket gs://your-bucket/fast-mia-results
+  --bucket gs://your-bucket/fast-mia-results \
+  --zone asia-southeast1-c \
+  --machine-type a2-ultragpu-1g \
+  --accelerator-type nvidia-a100-80gb
 ```
 
 Please visit our [Running on Google Cloud](https://nikkei.github.io/fast-mia/google-cloud/) documentation for more details.

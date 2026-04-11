@@ -1,13 +1,13 @@
 # Running on Google Cloud
 
-Fast-MIA provides scripts to submit GPU evaluation jobs to Google Compute Engine (GCE). The workflow automates instance creation, environment setup, job execution, result upload to Google Cloud Storage (GCS), and instance cleanup.
+Fast-MIA provides scripts to submit GPU evaluation jobs to Google Compute Engine (GCE). The workflow automates instance creation, environment setup, job execution, result upload to Google Cloud Storage (GCS), and instance stop/cleanup.
 
 ## Prerequisites
 
 Before using the GCP scripts, ensure you have:
 
 1. **gcloud CLI** installed and authenticated (`gcloud auth login`)
-2. **GPU quota** in the target zone (e.g., A100 GPUs in `us-central1-a`). You can check and request quota increases in the [Google Cloud Console](https://console.cloud.google.com/iam-admin/quotas).
+2. **GPU quota** in the target zone (e.g., A100 80GB GPUs in `asia-southeast1-c`). You can check and request quota increases in the [Google Cloud Console](https://console.cloud.google.com/iam-admin/quotas).
 3. **A GCS bucket** for storing results:
     ```bash
     gsutil mb gs://your-bucket-name
@@ -18,17 +18,20 @@ Before using the GCP scripts, ensure you have:
 ```bash
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
-  --bucket gs://your-bucket/fast-mia-results
+  --bucket gs://your-bucket/fast-mia-results \
+  --zone asia-southeast1-c \
+  --machine-type a2-ultragpu-1g \
+  --accelerator-type nvidia-a100-80gb
 ```
 
 This command will:
 
-1. Create a GCE instance with an A100 GPU (Deep Learning VM image with CUDA drivers)
+1. Create a GCE instance with an A100 80GB GPU (Deep Learning VM image with CUDA drivers)
 2. Transfer the project files to the instance
 3. Install `uv` and Python dependencies
 4. Run `main.py` with the specified config
 5. Upload `results/` to the GCS bucket
-6. Delete the instance
+6. Stop the instance (preserving model caches for reuse)
 
 ## CLI Options
 
@@ -37,49 +40,76 @@ This command will:
 | `--config` | (required) | Path to the YAML configuration file |
 | `--bucket` | (required) | GCS bucket URI for results (e.g., `gs://my-bucket/results`) |
 | `--project` | gcloud default | GCP project ID |
-| `--zone` | `us-central1-a` | GCE zone |
+| `--zone` | `us-central1-b` | GCE zone |
 | `--machine-type` | `a2-highgpu-1g` | Machine type (see [GPU machine types](https://cloud.google.com/compute/docs/gpus)) |
 | `--accelerator-type` | `nvidia-tesla-a100` | GPU type |
 | `--accelerator-count` | `1` | Number of GPUs |
 | `--boot-disk-size` | `200GB` | Boot disk size |
 | `--instance-name` | `fast-mia-job-<timestamp>` | Instance name |
 | `--extra-args` | – | Additional arguments for `main.py` |
-| `--keep-instance` | off | Keep the instance alive after the job |
+| `--delete-after` | off | Delete the instance after the job instead of stopping it |
 
 ## Examples
 
-### Basic run with LLaMA-30B on A100
+### Basic run with LLaMA-30B on A100 80GB
 
 ```bash
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
-  --bucket gs://my-bucket/fast-mia-results
+  --bucket gs://my-bucket/fast-mia-results \
+  --zone asia-southeast1-c \
+  --machine-type a2-ultragpu-1g \
+  --accelerator-type nvidia-a100-80gb
 ```
 
-### Detailed report with specific project and zone
+### Reusing a stopped instance
+
+When a job completes, the instance is stopped by default. You can reuse it for the next run by specifying `--instance-name` and `--zone`, which skips environment setup and reuses model caches:
+
+```bash
+./gcp/submit_job.sh \
+  --config config/llama30b-exp.yaml \
+  --bucket gs://my-bucket/fast-mia-results \
+  --instance-name fast-mia-job-XXXXXXXX-XXXXXX \
+  --zone asia-southeast1-c \
+  --machine-type a2-ultragpu-1g \
+  --accelerator-type nvidia-a100-80gb
+```
+
+### Detailed report with specific project
 
 ```bash
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
   --bucket gs://my-bucket/fast-mia-results \
   --project my-gcp-project \
-  --zone us-west1-b \
+  --zone asia-southeast1-c \
+  --machine-type a2-ultragpu-1g \
+  --accelerator-type nvidia-a100-80gb \
   --extra-args "--seed 42 --detailed-report"
 ```
 
-### Keep the instance for debugging
+### Delete instance after job
+
+```bash
+./gcp/submit_job.sh \
+  --config config/llama30b-exp.yaml \
+  --bucket gs://my-bucket/fast-mia-results \
+  --zone asia-southeast1-c \
+  --machine-type a2-ultragpu-1g \
+  --accelerator-type nvidia-a100-80gb \
+  --delete-after
+```
+
+### Using A100 40GB for smaller models
+
+For smaller models (e.g., Qwen2.5-0.5B), you can use the default A100 40GB:
 
 ```bash
 ./gcp/submit_job.sh \
   --config config/sample.yaml \
   --bucket gs://my-bucket/fast-mia-results \
-  --keep-instance
-```
-
-After debugging, delete it manually:
-
-```bash
-gcloud compute instances delete fast-mia-job-XXXXXXXX-XXXXXX --zone=us-central1-a --quiet
+  --zone us-central1-f
 ```
 
 ## Retrieving Results
@@ -96,15 +126,9 @@ gsutil -m cp -r gs://your-bucket/fast-mia-results/YYYYMMDD-HHMMSS ./results/
 
 ## Cost Considerations
 
-- **A100 instances** (`a2-highgpu-1g`) are expensive. The script automatically deletes the instance after the job completes unless `--keep-instance` is specified.
-- For smaller models (e.g., Qwen2.5-0.5B), consider using cheaper GPU types:
-    ```bash
-    ./gcp/submit_job.sh \
-      --config config/sample.yaml \
-      --bucket gs://my-bucket/fast-mia-results \
-      --machine-type n1-standard-8 \
-      --accelerator-type nvidia-tesla-t4
-    ```
+- **A100 80GB instances** (`a2-ultragpu-1g`) are expensive. The script automatically stops the instance after the job completes to prevent unnecessary charges. Use `--delete-after` to delete it entirely.
+- **Stopped instances** still incur disk storage costs (small), but GPU charges stop immediately.
+- **Reusing instances** saves time on model downloads and environment setup, which can be significant for large models like LLaMA-30B (~60GB).
 - Monitor your spending in the [Google Cloud Console Billing](https://console.cloud.google.com/billing) page.
 
 ## Troubleshooting
@@ -113,9 +137,13 @@ gsutil -m cp -r gs://your-bucket/fast-mia-results/YYYYMMDD-HHMMSS ./results/
 
 If you see a quota error, request a quota increase for the GPU type in the target zone via the [Quotas page](https://console.cloud.google.com/iam-admin/quotas).
 
+### Zone resource pool exhausted (stockout)
+
+This means the zone has no available GPUs. Try a different zone. Available zones for A100 80GB include `asia-southeast1-c`, `us-central1-c`, and `us-east4-c`.
+
 ### NVIDIA driver not ready
 
-The setup script waits up to 5 minutes for NVIDIA drivers to initialize. If it times out, the Deep Learning VM image may not have finished installing drivers. Try re-running or using `--keep-instance` to SSH in and debug.
+The setup script waits up to 5 minutes for NVIDIA drivers to initialize. If it times out, the Deep Learning VM image may not have finished installing drivers. Try re-running with the same `--instance-name` to reuse the instance.
 
 ### SSH connection timeout
 
