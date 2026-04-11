@@ -166,6 +166,7 @@ tar -czf "$TMPTAR" \
     --exclude='__pycache__' \
     --exclude='.venv' \
     --exclude='results' \
+    --exclude='data' \
     --exclude='.ruff_cache' \
     .
 
@@ -180,6 +181,19 @@ gcloud compute ssh "$INSTANCE_NAME" \
     --command="mkdir -p ~/fast-mia && tar -xzf ~/fast-mia.tar.gz -C ~/fast-mia"
 
 rm -f "$TMPTAR"
+
+# Transfer local data files if config references a local path
+DATA_PATH=$(grep 'data_path:' "$PROJECT_ROOT/$CONFIG" | head -1 | sed 's/.*data_path:[[:space:]]*["'\'']\?\([^"'\''#]*\)["'\'']\?.*/\1/' | xargs)
+if [[ -n "$DATA_PATH" && "$DATA_PATH" == ./* && -f "$PROJECT_ROOT/$DATA_PATH" ]]; then
+    echo "Transferring data file: $DATA_PATH"
+    # shellcheck disable=SC2086
+    gcloud compute ssh "$INSTANCE_NAME" \
+        --zone="$ZONE" $PROJECT_FLAG \
+        --command="mkdir -p ~/fast-mia/$(dirname "$DATA_PATH")"
+    # shellcheck disable=SC2086
+    gcloud compute scp "$PROJECT_ROOT/$DATA_PATH" "$INSTANCE_NAME":~/fast-mia/"$DATA_PATH" \
+        --zone="$ZONE" $PROJECT_FLAG
+fi
 
 # ── Step 3: Setup environment ────────────────────────────
 if [[ "$REUSE_INSTANCE" == "true" ]]; then
