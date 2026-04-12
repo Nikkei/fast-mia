@@ -19,7 +19,7 @@ Before using the GCP scripts, ensure you have:
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
   --bucket gs://your-bucket/fast-mia-results \
-  --zone asia-southeast1-c \
+  --zone ZONE \
   --machine-type a2-ultragpu-1g \
   --accelerator-type nvidia-a100-80gb
 ```
@@ -40,7 +40,7 @@ This command will:
 | `--config` | (required) | Path to the YAML configuration file |
 | `--bucket` | (required) | GCS bucket URI for results (e.g., `gs://my-bucket/results`) |
 | `--project` | gcloud default | GCP project ID |
-| `--zone` | `us-central1-b` | GCE zone |
+| `--zone` | `us-central1-b` | GCE zone (e.g., `us-central1-f`, `asia-southeast1-c`) |
 | `--machine-type` | `a2-highgpu-1g` | Machine type (see [GPU machine types](https://cloud.google.com/compute/docs/gpus)) |
 | `--accelerator-type` | `nvidia-tesla-a100` | GPU type |
 | `--accelerator-count` | `1` | Number of GPUs |
@@ -57,7 +57,7 @@ This command will:
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
   --bucket gs://my-bucket/fast-mia-results \
-  --zone asia-southeast1-c \
+  --zone ZONE \
   --machine-type a2-ultragpu-1g \
   --accelerator-type nvidia-a100-80gb
 ```
@@ -71,7 +71,7 @@ When a job completes, the instance is stopped by default. You can reuse it for t
   --config config/llama30b-exp.yaml \
   --bucket gs://my-bucket/fast-mia-results \
   --instance-name fast-mia-job-XXXXXXXX-XXXXXX \
-  --zone asia-southeast1-c \
+  --zone ZONE \
   --machine-type a2-ultragpu-1g \
   --accelerator-type nvidia-a100-80gb
 ```
@@ -83,7 +83,7 @@ When a job completes, the instance is stopped by default. You can reuse it for t
   --config config/llama30b-exp.yaml \
   --bucket gs://my-bucket/fast-mia-results \
   --project my-gcp-project \
-  --zone asia-southeast1-c \
+  --zone ZONE \
   --machine-type a2-ultragpu-1g \
   --accelerator-type nvidia-a100-80gb \
   --extra-args "--seed 42 --detailed-report"
@@ -95,7 +95,7 @@ When a job completes, the instance is stopped by default. You can reuse it for t
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
   --bucket gs://my-bucket/fast-mia-results \
-  --zone asia-southeast1-c \
+  --zone ZONE \
   --machine-type a2-ultragpu-1g \
   --accelerator-type nvidia-a100-80gb \
   --delete-after
@@ -109,7 +109,7 @@ For smaller models (e.g., Qwen2.5-0.5B), you can use the default A100 40GB:
 ./gcp/submit_job.sh \
   --config config/sample.yaml \
   --bucket gs://my-bucket/fast-mia-results \
-  --zone us-central1-f
+  --zone ZONE
 ```
 
 ## Retrieving Results

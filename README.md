@@ -150,7 +150,7 @@ You can submit GPU jobs to Google Compute Engine using the provided scripts. The
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
   --bucket gs://your-bucket/fast-mia-results \
-  --zone asia-southeast1-c \
+  --zone ZONE \
   --machine-type a2-ultragpu-1g \
   --accelerator-type nvidia-a100-80gb
 ```
