@@ -12,6 +12,7 @@ edit_uri: edit/main/docs/
 nav:
   - Home: index.md
   - How to Use: how-to-use.md
+  - Running on Google Cloud: google-cloud.md
   - API Reference: api-reference.md
 
 theme:

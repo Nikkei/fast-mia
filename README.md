@@ -142,6 +142,21 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 - Dataset: WikiMIA (length: 32)
 - Configuration: The Fast-MIA experimental results were obtained using `config/llama30b-exp.yaml`.
 
+## Running on Google Cloud
+
+You can submit GPU jobs to Google Compute Engine using the provided scripts. The workflow creates an A100 80GB GPU instance, runs the evaluation, uploads results to Google Cloud Storage, and stops the instance (preserving model caches for reuse).
+
+```bash
+./gcp/submit_job.sh \
+  --config config/llama30b-exp.yaml \
+  --bucket gs://your-bucket/fast-mia-results \
+  --zone ZONE \
+  --machine-type a2-ultragpu-1g \
+  --accelerator-type nvidia-a100-80gb
+```
+
+Please visit our [Running on Google Cloud](https://nikkei.github.io/fast-mia/google-cloud/) documentation for more details.
+
 ## How to contribute
 
 Feel free to contact the [maintainers](https://github.com/Nikkei/fast-mia/blob/main/pyproject.toml#L8).
