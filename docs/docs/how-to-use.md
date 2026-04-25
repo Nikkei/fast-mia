@@ -49,7 +49,25 @@ Please refer to `config/sample.yaml` for a complete example configuration file.
 | Field | Required | Notes |
 |-------|----------|-------|
 | `model_id` | ✅ | The name or path of a HuggingFace Transformers model that `vllm.LLM` can load. (= model) |
+| `quantization` | ❌ | Enables vLLM quantization for the model, for example `bitsandbytes`. Fast-MIA supports the same quantization methods as vLLM; see the [vLLM Quantization documentation](https://docs.vllm.ai/en/v0.15.1/features/quantization/) for the currently supported methods and hardware requirements. |
 | Other keys | ❌ | Forwarded directly to `vllm.LLM`. Select params to fit the model onto your hardware, following the [vLLM.LLM API Reference](https://docs.vllm.ai/en/stable/api/vllm/index.html#vllm.LLM). |
+
+Quantization can be configured in any model configuration block that is passed to vLLM, including the top-level `model` block and method-specific model blocks such as `methods[].params.reference_model`.
+
+```yaml
+model:
+  model_id: "huggyllama/llama-30b"
+  dtype: "bfloat16"
+  quantization: "bitsandbytes"
+
+methods:
+  - type: "ref"
+    params:
+      reference_model:
+        model_id: "huggyllama/llama-7b"
+        dtype: "bfloat16"
+        quantization: "bitsandbytes"
+```
 
 ### `sampling_parameters` Block
 
