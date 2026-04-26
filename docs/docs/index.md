@@ -13,7 +13,7 @@
 
 ### Environment
 
-Supported environments are Linux & NVIDIA GPUs. It basically supports the same [GPU requirements as vLLM](https://docs.vllm.ai/en/latest/getting_started/installation/gpu.html). For example, it takes a few minutes to run using NVIDIA A100 80GB.
+Supported environments are Linux & NVIDIA GPUs. It basically supports the same [GPU requirements as vLLM](https://docs.vllm.ai/en/v0.15.1/getting_started/installation/gpu/). For example, it takes a few minutes to run using NVIDIA A100 80GB.
 
 ### Installation
 
