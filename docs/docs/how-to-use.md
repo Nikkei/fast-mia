@@ -50,7 +50,7 @@ Please refer to `config/sample.yaml` for a complete example configuration file.
 |-------|----------|-------|
 | `model_id` | ✅ | The name or path of a HuggingFace Transformers model that `vllm.LLM` can load. (= model) |
 | `quantization` | ❌ | Enables vLLM quantization for the model, for example `bitsandbytes`. Fast-MIA supports the same quantization methods as vLLM; see the [vLLM Quantization documentation](https://docs.vllm.ai/en/v0.15.1/features/quantization/) for the currently supported methods and hardware requirements. |
-| Other keys | ❌ | Forwarded directly to `vllm.LLM`. Select params to fit the model onto your hardware, following the [vLLM.LLM API Reference](https://docs.vllm.ai/en/stable/api/vllm/index.html#vllm.LLM). |
+| Other keys | ❌ | Forwarded directly to `vllm.LLM`. Select params to fit the model onto your hardware, following the [vLLM.LLM API Reference](https://docs.vllm.ai/en/v0.15.1/api/vllm/index.html#vllm.LLM). |
 
 Quantization can be configured in any model configuration block that is passed to vLLM, including the top-level `model` block and method-specific model blocks such as `methods[].params.reference_model`.
 
@@ -71,7 +71,7 @@ methods:
 
 ### `sampling_parameters` Block
 
-Values are passed to `vllm.SamplingParams`. Select params following the [vLLM.SamplingParams API Reference](https://docs.vllm.ai/en/stable/api/vllm/index.html#vllm.SamplingParams). Fast-MIA automatically enforces `prompt_logprobs: 0`, `max_tokens: 1`, `temperature: 0.0`, and `top_p: 1.0` whenever the config omits those keys to ensure deterministic, efficient scoring, but you can override any of these defaults by explicitly setting them inside this block.
+Values are passed to `vllm.SamplingParams`. Select params following the [vLLM.SamplingParams API Reference](https://docs.vllm.ai/en/v0.15.1/api/vllm/index.html#vllm.SamplingParams). Fast-MIA automatically enforces `prompt_logprobs: 0`, `max_tokens: 1`, `temperature: 0.0`, and `top_p: 1.0` whenever the config omits those keys to ensure deterministic, efficient scoring, but you can override any of these defaults by explicitly setting them inside this block.
 
 **Recommended defaults for deterministic scoring**
 
@@ -84,7 +84,7 @@ Values are passed to `vllm.SamplingParams`. Select params following the [vLLM.Sa
 
 ### `lora` Block (Optional)
 
-Values are passed to `vllm.lora.request.LoRARequest`. Select params following the [vLLM.lora.request.LoRARequest API Reference](https://docs.vllm.ai/en/stable/api/vllm/lora/request.html#vllm.lora.request.LoRARequest).
+Values are passed to `vllm.lora.request.LoRARequest`. Select params following the [vLLM.lora.request.LoRARequest API Reference](https://docs.vllm.ai/en/v0.15.1/api/vllm/lora/request.html#vllm.lora.request.LoRARequest).
 
 | Field | Purpose |
 |-------|---------|
