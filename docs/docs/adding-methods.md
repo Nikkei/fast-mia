@@ -31,38 +31,17 @@ abstract, so each subclass must also implement `process_output()`; use it for th
 per-output scoring logic that `run()` applies to model outputs.
 
 ```python
-from typing import Any
-
-import numpy as np
-from vllm import LLM, SamplingParams
-from vllm.lora.request import LoRARequest
-from vllm.outputs import RequestOutput
-
 from .base import BaseMethod
 
 
 class MyMethod(BaseMethod):
     """My membership inference method."""
 
-    def __init__(self, method_config: dict[str, Any] = None) -> None:
-        super().__init__("my_method", method_config)
-        self.scale = self.method_config.get("scale", 1.0)
+    def process_output(self, output):
+        ...
 
-    def process_output(self, output: RequestOutput) -> float:
-        token_log_probs = self._extract_token_log_probs(output)
-        return float(np.mean(token_log_probs) * self.scale)
-
-    def run(
-        self,
-        texts: list[str],
-        model: LLM,
-        sampling_params: SamplingParams,
-        lora_request: LoRARequest = None,
-        data_config: dict[str, Any] = None,
-    ) -> list[float]:
-        outputs = self.get_outputs(
-            texts, model, sampling_params, lora_request, data_config
-        )
+    def run(self, texts, model, sampling_params, lora_request=None, data_config=None):
+        outputs = self.get_outputs(texts, model, sampling_params, lora_request, data_config)
         return [self.process_output(output) for output in outputs]
 ```
 
@@ -117,8 +96,8 @@ When implementing `run()`, keep these conventions:
   unless there is a specific reason to bypass the shared cache.
 - Accept `lora_request=None` and `data_config=None` so the evaluator can pass
   runtime context consistently.
-- Validate required method-specific config in `__init__()` and raise `ValueError`
-  with a clear message when required keys are missing.
+- If the method has mandatory configuration keys, validate them in `__init__()`
+  and raise `ValueError` with a clear message when they are missing.
 - If a temporary vLLM model is loaded, release it with `self.cleanup_model(...)`
   when the method finishes.
 
