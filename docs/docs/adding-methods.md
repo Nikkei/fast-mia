@@ -89,6 +89,45 @@ one-score-per-output transformation. Common cases include:
 - The method generates multiple augmented samples or prompts per input.
 - The method needs labels or tokenizer-specific processing.
 
+The following example shows a method with a configurable parameter and a custom
+scoring formula:
+
+```python
+from typing import Any
+
+import numpy as np
+from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
+from vllm.outputs import RequestOutput
+
+from .base import BaseMethod
+
+
+class MyMethod(BaseMethod):
+    """My membership inference method."""
+
+    def __init__(self, method_config: dict[str, Any] = None) -> None:
+        super().__init__("my_method", method_config)
+        self.scale = self.method_config.get("scale", 1.0)
+
+    def process_output(self, output: RequestOutput) -> float:
+        token_log_probs = self._extract_token_log_probs(output)
+        return float(np.mean(token_log_probs) * self.scale)
+
+    def run(
+        self,
+        texts: list[str],
+        model: LLM,
+        sampling_params: SamplingParams,
+        lora_request: LoRARequest = None,
+        data_config: dict[str, Any] = None,
+    ) -> list[float]:
+        outputs = self.get_outputs(
+            texts, model, sampling_params, lora_request, data_config
+        )
+        return [self.process_output(output) for output in outputs]
+```
+
 When implementing `run()`, keep these conventions:
 
 - Return one numeric score for each input text, in the same order.
