@@ -25,10 +25,9 @@ arguments.
 ## Implement the Method
 
 Create a file such as `src/methods/my_method.py` and subclass `BaseMethod`.
-Implement the method-specific flow in `run()`, and call `self.get_outputs(...)`
-inside `run()` whenever the method needs target model outputs. `BaseMethod` is
-abstract, so each subclass must also implement `process_output()`; use it for the
-per-output scoring logic that `run()` applies to model outputs.
+`BaseMethod` is abstract, so each subclass must implement `process_output()`;
+use it for the per-output scoring logic. The default `run()` implementation calls
+`self.get_outputs(...)` and applies `process_output()` to each result.
 
 ```python
 from .base import BaseMethod
@@ -37,12 +36,11 @@ from .base import BaseMethod
 class MyMethod(BaseMethod):
     """My membership inference method."""
 
+    def __init__(self, method_config=None):
+        super().__init__("my_method", method_config)
+
     def process_output(self, output):
         ...
-
-    def run(self, texts, model, sampling_params, lora_request=None, data_config=None):
-        outputs = self.get_outputs(texts, model, sampling_params, lora_request, data_config)
-        return [self.process_output(output) for output in outputs]
 ```
 
 `get_outputs()` handles shared model-output caching, LoRA requests, and
@@ -213,8 +211,8 @@ needs a sample configuration file, add or update a file under `config/`.
 ## Checklist
 
 - [ ] Add `src/methods/<method>.py`.
-- [ ] Subclass `BaseMethod`, implement `process_output()`, and put the
-      method-specific flow in `run()`.
+- [ ] Subclass `BaseMethod` and implement `process_output()`. Override `run()`
+      only if the method needs custom flow beyond the default behavior.
 - [ ] Set `requires_labels`, `requires_tokenizer`, or
       `requires_sampling_params` if needed.
 - [ ] Register the method in `METHOD_BUILDERS`.
