@@ -1,15 +1,20 @@
 <h1 align="center">Fast-MIA</h1>
 
-<h3 align="center">
-A framework for efficiently evaluating Membership Inference Attacks (MIA) against Large Language Models (LLMs). 
-
-This tool enables fast execution of representative membership inference methods using vLLM.
-</h3>
-
 <p align="center">
-  | <a href="https://nikkei.github.io/fast-mia/">Documentation</a> | <a href="https://arxiv.org/abs/2510.23074">Paper</a> |
+  <strong>A framework for efficiently evaluating Membership Inference Attacks (MIA) against Large Language Models (LLMs).</strong><br>
+  Fast execution of representative membership inference methods, powered by vLLM.
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/ACL%202026-System%20Demonstrations-4b44ce?style=for-the-badge" alt="ACL 2026 System Demonstrations">
+</p>
+
+<p align="center">
+  <a href="https://nikkei.github.io/fast-mia/"><img src="https://img.shields.io/badge/docs-latest-blue?style=flat-square&logo=readthedocs&logoColor=white" alt="Documentation"></a>
+  <a href="https://arxiv.org/abs/2510.23074"><img src="https://img.shields.io/badge/arXiv-2510.23074-b31b1b?style=flat-square&logo=arxiv&logoColor=white" alt="arXiv"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square" alt="License"></a>
+  <img src="https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square&logo=python&logoColor=white" alt="Python">
+</p>
 
 ## Features
 
@@ -177,7 +182,20 @@ See [NOTICE](NOTICE) for information about third-party code and modifications.
 ## Reference
 
 ```
-@misc{takahashi_ishihara_fastmia,
+@inproceedings{takahashi_ishihara_fastmia,
+  author    = {Hiromu Takahashi and Shotaro Ishihara},
+  title     = {{Fast-MIA}: Efficient and Scalable Membership Inference for LLMs},
+  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics: System Demonstrations},
+  year      = {2026},
+  publisher = {Association for Computational Linguistics},
+  note      = {To appear}
+}
+```
+
+Preprint:
+
+```
+@misc{takahashi_ishihara_fastmia_arxiv,
   Author = {Hiromu Takahashi and Shotaro Ishihara},
   Title = {{Fast-MIA}: Efficient and Scalable Membership Inference for LLMs},
   Year = {2025},
