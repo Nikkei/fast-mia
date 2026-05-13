@@ -142,6 +142,13 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 - Dataset: WikiMIA (length: 32)
 - Configuration: The Fast-MIA experimental results were obtained using `config/llama30b-exp.yaml`.
 
+## How to Add Methods
+
+To implement a new MIA method, see the
+[Adding Methods](https://nikkei.github.io/fast-mia/adding-methods/) guide.
+It covers how to add a method class, register it in `MethodFactory`, add it to
+YAML configuration files, and update tests and documentation.
+
 ## Running on Google Cloud
 
 You can submit GPU jobs to Google Compute Engine using the provided scripts. The workflow creates an A100 80GB GPU instance, runs the evaluation, uploads results to Google Cloud Storage, and stops the instance (preserving model caches for reuse).
