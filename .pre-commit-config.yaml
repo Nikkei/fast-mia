@@ -15,3 +15,4 @@ repos:
       entry: uv run pytest --cov tests -v
       language: system
       pass_filenames: false
+      files: ^(src|tests)/.*\.py$
