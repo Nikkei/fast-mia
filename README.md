@@ -171,7 +171,17 @@ Please visit our [Running on Google Cloud](https://nikkei.github.io/fast-mia/goo
 
 ## How to contribute
 
-Feel free to contact the [maintainers](https://github.com/Nikkei/fast-mia/blob/main/pyproject.toml#L8).
+To set up the development environment:
+
+```bash
+git clone https://github.com/Nikkei/fast-mia.git
+cd fast-mia
+make setup
+```
+
+This installs dev dependencies and registers pre-commit hooks (linting, formatting, tests) that run automatically on each commit.
+
+If you have any questions, feel free to contact the [maintainers](https://github.com/Nikkei/fast-mia/blob/main/pyproject.toml#L8).
 
 ## License
 
