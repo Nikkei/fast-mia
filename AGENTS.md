@@ -11,8 +11,11 @@ Fast-MIA is a framework for evaluating Membership Inference Attacks (MIA) agains
 ## Commands
 
 ```bash
-# Install dependencies
-uv sync
+# Initial setup (install dependencies + pre-commit hooks)
+make setup
+# or manually:
+uv sync --group dev
+uv run pre-commit install
 
 # Run evaluation
 uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml
@@ -20,12 +23,16 @@ uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml
 # Run with detailed report (metadata, per-sample scores, visualizations)
 uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml --detailed-report
 
-# Lint and format (ruff; excludes tests/)
-uv run ruff check src/
-uv run ruff format src/
+# Lint and format (ruff)
+make lint
+# or manually:
+uv run ruff check --fix --config pyproject.toml
+uv run ruff format --config pyproject.toml
 
 # Run all tests
-uv run pytest
+make test
+# or manually:
+uv run pytest --cov tests -v
 
 # Run a single test file
 uv run pytest tests/unit/test_factory.py
