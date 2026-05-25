@@ -184,3 +184,5 @@ cython_debug/
 /results/*
 ## C4
 /data/c4-*
+## downloaded papers and reference repos
+/references/
