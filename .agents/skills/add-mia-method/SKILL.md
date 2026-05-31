@@ -20,27 +20,76 @@ Implement a new MIA method in Fast-MIA from a paper URL (required) and optional 
 
 ## Phase 1: Read and Summarize
 
-**Download the paper** from arXiv HTML using `curl` and `html2text`:
+**Download the paper.** The source depends on the host. arXiv provides an HTML
+version for most papers (but not all — newly submitted papers, or TeX sources
+that fail HTML conversion, only have a PDF), so prefer HTML there and fall back
+to the PDF. Other hosts (ACL Anthology, OpenReview, NeurIPS/ICML/PMLR, direct
+PDF links, etc.) are downloaded as PDF. The Read tool parses PDFs natively, so a
+PDF is always a valid outcome.
 
 ```bash
 mkdir -p references/papers
 
-# Extract arXiv ID (e.g. 2301.12345 or 2301.12345v2) from the URL
+PAPER_URL="<paper-url>"
+
+# Try to extract an arXiv ID (e.g. 2301.12345 or 2301.12345v2) from the URL.
 ARXIV_ID=$(python3 -c "
 import re, sys
 m = re.search(r'([0-9]{4}\.[0-9]{4,5}(?:v\d+)?)', sys.argv[1])
 print(m.group(1) if m else '')
-" "<paper-url>")
+" "$PAPER_URL")
 
-# Fetch HTML version and convert to plain text
-curl -fsSL "https://arxiv.org/html/${ARXIV_ID}" \
-    | uvx html2text \
-    > "references/papers/${ARXIV_ID}.md"
+if [ -n "$ARXIV_ID" ]; then
+    # --- arXiv: try the HTML version first, fall back to the PDF ---
+    if curl -fsSL "https://arxiv.org/html/${ARXIV_ID}" \
+           | uvx html2text > "references/papers/${ARXIV_ID}.md" 2>/dev/null \
+       && [ -s "references/papers/${ARXIV_ID}.md" ]; then
+        echo "Fetched HTML version -> references/papers/${ARXIV_ID}.md"
+    else
+        # HTML unavailable (404) or empty: fall back to the PDF.
+        rm -f "references/papers/${ARXIV_ID}.md"
+        curl -fsSL "https://arxiv.org/pdf/${ARXIV_ID}" \
+            -o "references/papers/${ARXIV_ID}.pdf"
+        echo "HTML unavailable; saved PDF -> references/papers/${ARXIV_ID}.pdf"
+    fi
+else
+    # --- Non-arXiv: resolve a direct PDF URL from the page URL ---
+    case "$PAPER_URL" in
+        *.pdf)              PDF_URL="$PAPER_URL" ;;            # already a PDF link
+        *aclanthology.org*) PDF_URL="${PAPER_URL%/}.pdf" ;;   # .../2023.acl-long.1.pdf
+        *openreview.net*)   PDF_URL="${PAPER_URL/forum/pdf}" ;; # forum?id=.. -> pdf?id=..
+        *)                  PDF_URL="$PAPER_URL" ;;            # last resort: try as-is
+    esac
+
+    # Build a filesystem-safe slug for the output filename.
+    SLUG=$(python3 -c "
+import re, sys
+seg = sys.argv[1].rstrip('/').split('/')[-1]
+seg = re.sub(r'\.pdf$', '', seg, flags=re.I)
+print(re.sub(r'[^A-Za-z0-9._-]+', '-', seg) or 'paper')
+" "$PDF_URL")
+
+    if curl -fsSL "$PDF_URL" -o "references/papers/${SLUG}.pdf" \
+       && [ -s "references/papers/${SLUG}.pdf" ]; then
+        echo "Saved PDF -> references/papers/${SLUG}.pdf"
+    else
+        rm -f "references/papers/${SLUG}.pdf"
+        echo "Could not download a PDF from ${PDF_URL}"
+    fi
+fi
 ```
 
-The extracted Markdown is saved to `references/papers/<arxiv-id>.md`. Read that file with the Read tool.
+**Read whichever file was produced:**
 
-If the arXiv ID cannot be extracted, or `curl` returns an error (e.g. 404 — HTML version not yet available), inform the user and ask them to provide a direct link to the full paper text or the PDF URL so you can try the PDF instead.
+- If a `.md` file was produced (arXiv HTML), read it with the Read tool.
+- If a `.pdf` file was produced, read it with the Read tool directly — the Read
+  tool parses PDFs natively. Use the `pages` argument for papers over 10 pages
+  (max 20 pages per call; page through the whole document).
+
+If no file was downloaded (the `curl` step failed or produced an empty file —
+e.g. the host is behind a login wall, or the PDF lives at a non-obvious URL),
+inform the user and ask them to provide a direct PDF URL you can download, or to
+save the PDF into `references/papers/` themselves.
 
 **Clone the GitHub reference** (if provided):
 
