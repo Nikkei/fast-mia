@@ -75,6 +75,15 @@ All MIA methods live in `src/methods/` and subclass `BaseMethod` (`src/methods/b
 
 #### Registering a New Method
 
+Use the `/add-mia-method` skill (supported in Claude Code, Codex, and other
+skill-compatible assistants) to automate the steps below from a paper URL:
+
+```
+/add-mia-method <paper-url> [github-url]
+```
+
+Manual steps:
+
 1. Create `src/methods/<method>.py`, subclass `BaseMethod`, implement `process_output()`
 2. Add to `METHOD_BUILDERS` in `src/methods/factory.py`
 3. Export from `src/methods/__init__.py`
