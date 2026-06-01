@@ -277,7 +277,6 @@ methods:
 
 Then prompt:
 
-> Next steps: run `/commit-push-pr` when ready to commit and open a PR.
 > For contributions, also update `README.md`, `docs/docs/index.md`, and `docs/docs/how-to-use.md` per `docs/docs/adding-methods.md`.
 
 ## Judgment Rules
