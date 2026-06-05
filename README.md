@@ -154,6 +154,13 @@ To implement a new MIA method, see the
 It covers how to add a method class, register it in `MethodFactory`, add it to
 YAML configuration files, and update tests and documentation.
 
+If you are using an AI coding assistant that supports skills (such as Claude
+Code or Codex), the `/add-mia-method` skill automates this from a paper URL:
+
+```
+/add-mia-method <paper-url> [github-url]
+```
+
 ## Running on Google Cloud
 
 You can submit GPU jobs to Google Compute Engine using the provided scripts. The workflow creates an A100 80GB GPU instance, runs the evaluation, uploads results to Google Cloud Storage, and stops the instance (preserving model caches for reuse).
