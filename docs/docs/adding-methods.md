@@ -6,6 +6,21 @@ For examples, see the recently added
 [`RefMethod`](https://github.com/Nikkei/fast-mia/pull/43), which cover
 method-specific parameters, custom runtime inputs, and additional model logic.
 
+## Using the `/add-mia-method` Skill
+
+The `/add-mia-method` skill automates most of this process in AI coding
+assistants that support skills, such as Claude Code or Codex. Point it at a
+paper URL and an optional reference implementation and it will download and
+summarize the paper, propose a design, implement the method, register it, and
+run tests — pausing for your approval at each phase before writing any code.
+
+```
+/add-mia-method <paper-url> [github-url]
+```
+
+The manual steps below remain the reference for cases where the skill is not
+available or when you need more control over the implementation.
+
 ## Overview
 
 A method is a subclass of `BaseMethod` registered in `MethodFactory`. In most
