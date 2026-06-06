@@ -19,6 +19,7 @@ from .factory import MethodFactory
 from .loss import LossMethod
 from .lower import LowerMethod
 from .mink import MinKMethod
+from .neighbour import NeighbourMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .ref import RefMethod
@@ -38,4 +39,5 @@ __all__ = [
     "CONReCaLLMethod",
     "DCPDDMethod",
     "RefMethod",
+    "NeighbourMethod",
 ]
