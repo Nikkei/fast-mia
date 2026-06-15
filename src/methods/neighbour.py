@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import torch
+from tqdm import tqdm
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from vllm.outputs import RequestOutput
@@ -66,6 +67,18 @@ class NeighbourMethod(BaseMethod):
         return np.mean(token_log_probs)
 
     @staticmethod
+    def _clean_special_tokens(text: str) -> str:
+        """Strip BERT-style markers, mirroring attack.py's main loop.
+
+        Args:
+            text: Decoded text that may still contain ``[CLS]``/``[SEP]``
+
+        Returns:
+            Text with the leading ``[CLS]`` and trailing ``[SEP]`` removed
+        """
+        return text.replace(" [SEP]", " ").replace("[CLS] ", " ")
+
+    @staticmethod
     def _get_embeddings_module(search_model: "PreTrainedModel") -> torch.nn.Module:
         """Locate the input-embeddings submodule of a masked LM backbone.
 
@@ -90,8 +103,14 @@ class NeighbourMethod(BaseMethod):
         search_model: "PreTrainedModel",
         search_tokenizer: "PreTrainedTokenizerBase",
         device: torch.device,
-    ) -> list[str]:
+    ) -> tuple[str, list[str]]:
         """Generate single-word-replacement neighbours for a text.
+
+        Faithful port of attack.py's ``generate_neighbours_alt`` (the variant
+        actually used in the reference main loop): replacement candidates are
+        scored per ``(position, candidate-token)`` rather than per decoded
+        text, the top ``num_neighbours`` swaps are kept, and each is then
+        materialised into a one-token-replacement neighbour.
 
         Args:
             text: Original text
@@ -100,7 +119,8 @@ class NeighbourMethod(BaseMethod):
             device: Device on which to run the masked LM
 
         Returns:
-            Up to ``num_neighbours`` neighbour texts, ranked by swap score
+            Tuple of the search-tokenizer-normalised original text and up to
+            ``num_neighbours`` neighbour texts, ranked by swap score
         """
         token_dropout = torch.nn.Dropout(p=self.dropout)
         embeddings = self._get_embeddings_module(search_model)
@@ -114,7 +134,8 @@ class NeighbourMethod(BaseMethod):
         ).input_ids.to(device)
 
         base_embeds = embeddings(ids)
-        candidate_scores: dict[str, float] = {}
+        # (position, candidate_token_id) -> replacement score
+        replacements: dict[tuple[int, int], float] = {}
 
         # Skip the leading special token (e.g. [CLS]).
         for i in range(1, ids.shape[1]):
@@ -136,15 +157,28 @@ class NeighbourMethod(BaseMethod):
             for cand, prob in zip(top_cands, top_probs, strict=True):
                 if cand == target_token:
                     continue
-                alt_ids = torch.cat(
-                    (ids[:, :i], cand.view(1, 1), ids[:, i + 1 :]), dim=1
-                )
-                alt_text = search_tokenizer.decode(alt_ids[0], skip_special_tokens=True)
-                denom = 1 - original_prob.item()
-                score = prob.item() / denom if denom > 0 else prob.item()
-                candidate_scores[alt_text] = score
+                # Faithful to attack.py: a degenerate original_prob == 1 is
+                # floored to 0.1 to avoid a division by zero.
+                if original_prob.item() == 1:
+                    score = prob.item() / (1 - 0.9)
+                else:
+                    score = prob.item() / (1 - original_prob.item())
+                replacements[(i, int(cand))] = score
 
-        return nlargest(self.num_neighbours, candidate_scores, key=candidate_scores.get)
+        # Keep the highest-scored swaps and build one neighbour per swap.
+        top_keys = nlargest(self.num_neighbours, replacements, key=replacements.get)
+        neighbours = []
+        for i, cand in top_keys:
+            alt_ids = torch.cat(
+                (ids[:, :i], ids.new_tensor([[cand]]), ids[:, i + 1 :]), dim=1
+            )
+            alt_text = self._clean_special_tokens(
+                search_tokenizer.batch_decode(alt_ids)[0]
+            )
+            neighbours.append(alt_text)
+
+        orig_dec = self._clean_special_tokens(search_tokenizer.batch_decode(ids)[0])
+        return orig_dec, neighbours
 
     def run(
         self,
@@ -174,12 +208,19 @@ class NeighbourMethod(BaseMethod):
         search_model = AutoModelForMaskedLM.from_pretrained(self.search_model_id)
         search_model = search_model.to(device).eval()
 
-        # Generate neighbours for every text up front.
+        # Generate neighbours for every text up front. Each call also returns
+        # the search-tokenizer-normalised original text, so the original and
+        # its neighbours are scored through the same tokenisation (matching
+        # attack.py's main loop, which scores ``orig_dec`` rather than the raw
+        # text).
         with torch.no_grad():
-            neighbours_per_text = [
+            logging.info("Generating neighbours")
+            decoded = [
                 self._generate_neighbours(text, search_model, search_tokenizer, device)
-                for text in texts
+                for text in tqdm(texts)
             ]
+        orig_texts = [orig_dec for orig_dec, _ in decoded]
+        neighbours_per_text = [nbrs for _, nbrs in decoded]
 
         # Release the search model before invoking the vLLM target model.
         del search_model
@@ -189,7 +230,7 @@ class NeighbourMethod(BaseMethod):
 
         # Mean log-likelihood of the original texts under the target model.
         orig_outputs = self.get_outputs(
-            texts, model, sampling_params, lora_request, data_config
+            orig_texts, model, sampling_params, lora_request, data_config
         )
         orig_scores = [self.process_output(output) for output in orig_outputs]
 

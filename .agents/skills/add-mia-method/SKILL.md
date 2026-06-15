@@ -137,6 +137,7 @@ Closest existing methods for reference:
 - `samia` — self-adversarial MIA
 - `dcpdd` — DC-PDD tokenizer-based scoring
 - `pac` — PAC-based scoring
+- `neighbour` — masked-LM neighbour calibration (target loss minus mean neighbour loss)
 
 **Present the design and wait for explicit user approval before proceeding to Phase 3.**
 
