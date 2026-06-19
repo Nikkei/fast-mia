@@ -151,10 +151,10 @@ Available method types and their parameters:
 | `loss` | Uses the model's loss | – |
 | `zlib` | Uses the ratio of information content calculated by Zlib compression | – |
 | `ref` | Uses the difference in loss between the target model and a reference model | `reference_model` (required. Model configuration for the reference model, same fields as the `model` block). |
-| `neighbour` | https://github.com/justusmattern27/neighbour-mia | `search_model_id` (masked LM for neighbour generation, default `"bert-base-uncased"`), `num_neighbours` (number of single-word-replacement neighbours per text, default `100`), `dropout` (embedding dropout probability, default `0.7`), `top_k` (top candidate tokens per position, default `10`), `max_length` (max token length for the masked LM, default `512`). |
 | `mink` | https://github.com/swj0419/detect-pretrain-code | `ratio` (`0.0–1.0`, default `0.5`). |
 | `dcpdd` | https://github.com/zhang-wei-chao/DC-PDD | `file_num` (number of C4 text files, default `15`), `max_token_length` (max token length, default `1024`), `alpha` (upper bound of score, default `0.01`). |
 | `lower` | Uses the ratio of loss after lowercasing the text | – |
+| `neighbour` | https://github.com/justusmattern27/neighbour-mia | `search_model_id` (masked LM for neighbour generation, default `"bert-base-uncased"`), `num_neighbours` (number of single-word-replacement neighbours per text, default `100`), `dropout` (embedding dropout probability, default `0.7`), `top_k` (top candidate tokens per position, default `10`), `max_length` (max token length for the masked LM, default `512`). |
 | `pac` | https://github.com/yyy01/PAC | `alpha` (augmentation strength, default `0.3`), `N` (augmentations per sample, default `5`). |
 | `recall` | https://github.com/ruoyuxie/recall | `num_shots` (number of prefix texts, default `10`), `pass_window` (skip max-length trimming, default `False`). |
 | `conrecall` | https://github.com/WangCheng0116/CON-RECALL | Same as `recall` plus `gamma` (ratio of member prefixes loss, default `0.5`). |

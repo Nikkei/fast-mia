@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Nikkei Inc.
+# Copyright (c) 2026 Nikkei Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -248,8 +248,8 @@ class NeighbourMethod(BaseMethod):
         for orig_score, nbrs in zip(orig_scores, neighbours_per_text, strict=True):
             count = len(nbrs)
             if count == 0:
-                # No valid neighbours: fall back to an uncalibrated score.
-                scores.append(0.0)
+                # No valid neighbours: fall back to the uncalibrated original score.
+                scores.append(orig_score)
                 continue
             mean_neighbour = np.mean(neighbour_scores[cursor : cursor + count])
             cursor += count

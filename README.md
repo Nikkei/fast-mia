@@ -34,10 +34,10 @@ The identifier is the name used in this framework's configuration.
 | Baseline | **LOSS** (`loss`) | Uses the model's loss |
 || **PPL/zlib** (`zlib`) | Uses the ratio of information content calculated by Zlib compression |
 || **Ref** (`ref`) | Uses the difference in loss between the target model and a reference model |
-|| **Neighbour** (`neighbour`) | https://github.com/justusmattern27/neighbour-mia |
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
 || **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |
+|| **Neighbour** (`neighbour`) | https://github.com/justusmattern27/neighbour-mia |
 || **PAC** (`pac`) | https://github.com/yyy01/PAC |
 || **ReCaLL** (`recall`) | https://github.com/ruoyuxie/recall |
 || **Con-ReCall** (`conrecall`) | https://github.com/WangCheng0116/CON-RECALL |
@@ -128,7 +128,6 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 | baseline         | LOSS                    | 69.4 / 69.4 | 12s / 57s (×4.75)            | 84.3 / 84.3  | 18.3 / 18.3 |
 |                  | PPL/zlib                | 69.8 / 69.8 | 12s / 57s (×4.75)            | 80.2 / 80.2  | 14.5 / 14.5 |
 |                  | Ref                     | 62.8 / 63.6 | 17s / 1m35s (×5.59)          | 87.7 / 85.9  | 8.3 / 10.3 |
-|                  | Neighbour               | 57.8 /56.7  | 22m7s / 1h25m55s (×3.88)     | 91.8 /91.8   | 6.2 / 6.5 |
 | token distribution | Min-K% Prob (K=0.1)   | 67.2 / 67.2 | 12s / 57s (×4.75)            | 83.5 / 83.3  | 17.3 / 17.3 |
 |                  | Min-K% Prob (K=0.2)     | 69.3 / 69.3 | 12s / 57s (×4.75)            | 82.3 / 82.3  | 22.0 / 22.0 |
 |                  | Min-K% Prob (K=0.3)     | 70.1 / 70.1 | 12s / 57s (×4.75)            | 82.3 / 82.3  | 19.6 / 19.6 |
@@ -137,6 +136,7 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 |                  | Min-K% Prob (K=1.0)     | 69.4 / 69.4 | 12s / 57s (×4.75)            | 84.3 / 84.3  | 18.3 / 18.3 |
 |                  | DC-PDD                  | 67.4 / 67.4 | 12s / 57s (×4.75)            | 84.8 / 84.8  | 12.4 / 12.4 |
 | text alternation | Lowercase               | 64.1 / 64.1 | 25s / 1m59s (×4.76)          | 83.5 / 83.8  | 11.6 / 11.6 |
+|                  | Neighbour               | 57.8 / 56.7 | 22m7s / 1h25m55s (×3.88)     | 91.8 / 91.8  | 6.2 / 6.5 |
 |                  | PAC                     | 73.3 / 73.4 | 1m17s / 6m24s (×4.99)        | 82.3 / 77.9  | 27.6 / 24.3 |
 |                  | ReCaLL                  | 90.7 / 90.3 | 55s / 2m10s (×2.36)          | 28.5 / 34.7  | 50.4 / 48.8 |
 |                  | Con-ReCall          | 96.8 / 96.1 | 1m53s / 3m30s (×1.86)        | 10.8 / 12.9  | 78.0 / 73.6 |
