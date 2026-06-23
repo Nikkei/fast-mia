@@ -67,18 +67,6 @@ class NeighbourMethod(BaseMethod):
         return np.mean(token_log_probs)
 
     @staticmethod
-    def _clean_special_tokens(text: str) -> str:
-        """Strip BERT-style markers, mirroring attack.py's main loop.
-
-        Args:
-            text: Decoded text that may still contain ``[CLS]``/``[SEP]``
-
-        Returns:
-            Text with the leading ``[CLS]`` and trailing ``[SEP]`` removed
-        """
-        return text.replace(" [SEP]", " ").replace("[CLS] ", " ")
-
-    @staticmethod
     def _get_embeddings_module(search_model: "PreTrainedModel") -> torch.nn.Module:
         """Locate the input-embeddings submodule of a masked LM backbone.
 
@@ -172,12 +160,12 @@ class NeighbourMethod(BaseMethod):
             alt_ids = torch.cat(
                 (ids[:, :i], ids.new_tensor([[cand]]), ids[:, i + 1 :]), dim=1
             )
-            alt_text = self._clean_special_tokens(
-                search_tokenizer.batch_decode(alt_ids)[0]
-            )
+            alt_text = search_tokenizer.batch_decode(alt_ids, skip_special_tokens=True)[
+                0
+            ]
             neighbours.append(alt_text)
 
-        orig_dec = self._clean_special_tokens(search_tokenizer.batch_decode(ids)[0])
+        orig_dec = search_tokenizer.batch_decode(ids, skip_special_tokens=True)[0]
         return orig_dec, neighbours
 
     def run(
