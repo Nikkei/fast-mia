@@ -5,6 +5,7 @@ from src.methods.dcpdd import DCPDDMethod
 from src.methods.loss import LossMethod
 from src.methods.lower import LowerMethod
 from src.methods.mink import MinKMethod
+from src.methods.neighbour import NeighbourMethod
 from src.methods.pac import PACMethod
 from src.methods.recall import ReCaLLMethod
 from src.methods.ref import RefMethod
@@ -23,6 +24,7 @@ class TestMethodFactory:
         ("conrecall", CONReCaLLMethod, {"num_shots": 5}),
         ("dcpdd", DCPDDMethod, {"file_num": 10}),
         ("ref", RefMethod, {"reference_model": {"model_id": "dummy"}}),
+        ("neighbour", NeighbourMethod, {}),
     ])
     def test_create_method(self, type_, cls, params):
         method = MethodFactory.create_method({"type": type_, "params": params})

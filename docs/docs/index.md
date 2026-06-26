@@ -61,6 +61,7 @@ Fast-MIA supports the following MIA methods:
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
 | | **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |
+| | **Neighbour** (`neighbour`) | https://github.com/justusmattern27/neighbour-mia |
 | | **PAC** (`pac`) | https://github.com/yyy01/PAC |
 | | **ReCaLL** (`recall`) | https://github.com/ruoyuxie/recall |
 | | **Con-ReCall** (`conrecall`) | https://github.com/WangCheng0116/CON-RECALL |

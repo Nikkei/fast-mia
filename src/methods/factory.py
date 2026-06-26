@@ -20,6 +20,7 @@ from .dcpdd import DCPDDMethod
 from .loss import LossMethod
 from .lower import LowerMethod
 from .mink import MinKMethod
+from .neighbour import NeighbourMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .ref import RefMethod
@@ -37,6 +38,7 @@ METHOD_BUILDERS = {
     "samia": SaMIAMethod,
     "dcpdd": DCPDDMethod,
     "ref": RefMethod,
+    "neighbour": NeighbourMethod,
 }
 
 

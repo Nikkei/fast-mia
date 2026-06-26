@@ -76,6 +76,13 @@ methods:
       file_num: 15
       max_token_length: 1024
       alpha: 0.01
+  - type: "neighbour"
+    params:
+      search_model_id: "bert-base-uncased"
+      num_neighbours: 100
+      dropout: 0.7
+      top_k: 10
+      max_length: 512
 
 # Output settings
 output_dir: "./results" 
