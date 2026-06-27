@@ -23,7 +23,7 @@ import numpy as np
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from vllm.outputs import RequestOutput
-from vllm.transformers_utils.tokenizer import AnyTokenizer
+from vllm.tokenizers import TokenizerLike
 
 from .base import BaseMethod
 
@@ -52,7 +52,7 @@ def download_c4_data(file_num: int) -> None:
 
 def update_freq_dist(
     examples: list[str],
-    tokenizer: AnyTokenizer,
+    tokenizer: TokenizerLike,
     freq_dist: list[int],
     max_token_length: int,
 ) -> list[int]:
@@ -117,7 +117,7 @@ class DCPDDMethod(BaseMethod):
         self,
         texts: list[str],
         model: LLM,
-        tokenizer: AnyTokenizer,
+        tokenizer: TokenizerLike,
         sampling_params: SamplingParams,
         lora_request: LoRARequest = None,
         data_config: dict[str, Any] = None,

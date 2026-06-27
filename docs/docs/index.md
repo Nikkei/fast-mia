@@ -13,7 +13,7 @@
 
 ### Environment
 
-Supported environments are Linux & NVIDIA GPUs. It basically supports the same [GPU requirements as vLLM](https://docs.vllm.ai/en/v0.15.1/getting_started/installation/gpu/). For example, it takes a few minutes to run using NVIDIA A100 80GB.
+Supported environments are Linux & NVIDIA GPUs. It basically supports the same [GPU requirements as vLLM](https://docs.vllm.ai/en/v0.23.0/getting_started/installation/gpu/). For example, it takes a few minutes to run using NVIDIA A100 80GB.
 
 ### Installation
 
@@ -31,12 +31,12 @@ source .venv/bin/activate
 ### Execution
 
 ```bash
-uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml
+uv run --with 'vllm==0.23.0' python main.py --config config/sample.yaml
 ```
 
 **Note**: When using T4 GPUs (e.g., Google Colab), set the environment variable to avoid attention backend issues:
 > ```bash
-> VLLM_ATTENTION_BACKEND=XFORMERS uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml
+> VLLM_ATTENTION_BACKEND=XFORMERS uv run --with 'vllm==0.23.0' python main.py --config config/sample.yaml
 > ```
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19eOf6JSz6vPc7Im0tMw1Us04JxbAnXXx?usp=sharing)
@@ -46,7 +46,7 @@ uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml
 For benchmarking with detailed outputs (metadata, per-sample scores, visualizations):
 
 ```bash
-uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml --detailed-report
+uv run --with 'vllm==0.23.0' python main.py --config config/sample.yaml --detailed-report
 ```
 
 ## 📚 Supported MIA Methods
