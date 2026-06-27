@@ -57,7 +57,11 @@ def update_freq_dist(
     max_token_length: int,
 ) -> list[int]:
     example_texts = [example["text"] for example in examples]
-    example_input_ids = tokenizer.batch_encode_plus(
+    # vLLM>=0.23 wraps the tokenizer in a thread-safe pool that only exposes a
+    # whitelist of methods (and the bundled transformers dropped the deprecated
+    # ``batch_encode_plus``). Use the standard ``__call__`` API, which batch
+    # encodes a list of texts and returns the same ``input_ids``.
+    example_input_ids = tokenizer(
         example_texts, truncation=True, max_length=max_token_length
     )["input_ids"]
     for input_ids in example_input_ids:
