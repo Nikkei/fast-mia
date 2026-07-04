@@ -6,11 +6,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/ACL%202026-System%20Demonstrations-4b44ce?style=for-the-badge" alt="ACL 2026 System Demonstrations">
+  <a href="https://aclanthology.org/2026.acl-demo.9/"><img src="https://img.shields.io/badge/ACL%202026-System%20Demonstrations-4b44ce?style=for-the-badge" alt="ACL 2026 System Demonstrations"></a>
 </p>
 
 <p align="center">
   <a href="https://nikkei.github.io/fast-mia/"><img src="https://img.shields.io/badge/docs-latest-blue?style=flat-square&logo=readthedocs&logoColor=white" alt="Documentation"></a>
+  <a href="https://aclanthology.org/2026.acl-demo.9/"><img src="https://img.shields.io/badge/ACL%20Anthology-2026.acl--demo.9-ed1c24?style=flat-square" alt="ACL Anthology"></a>
   <a href="https://arxiv.org/abs/2510.23074"><img src="https://img.shields.io/badge/arXiv-2510.23074-b31b1b?style=flat-square&logo=arxiv&logoColor=white" alt="arXiv"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square&logo=python&logoColor=white" alt="Python">
@@ -200,14 +201,21 @@ See [NOTICE](NOTICE) for information about third-party code and modifications.
 
 ## Reference
 
+[Fast-MIA: Efficient and Scalable Membership Inference for LLMs](https://aclanthology.org/2026.acl-demo.9/) (ACL 2026 System Demonstrations)
+
 ```
-@inproceedings{takahashi_ishihara_fastmia,
-  author    = {Hiromu Takahashi and Shotaro Ishihara},
-  title     = {{Fast-MIA}: Efficient and Scalable Membership Inference for LLMs},
-  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics: System Demonstrations},
-  year      = {2026},
-  publisher = {Association for Computational Linguistics},
-  note      = {To appear}
+@inproceedings{takahashi-ishihara-2026-fast,
+  title     = "Fast-{MIA}: Efficient and Scalable Membership Inference for {LLM}s",
+  author    = "Takahashi, Hiromu and Ishihara, Shotaro",
+  editor    = "Durrett, Greg and Jian, Ping",
+  booktitle = "Proceedings of the 64th Annual Meeting of the {A}ssociation for {C}omputational {L}inguistics (Volume 3: System Demonstrations)",
+  month     = jul,
+  year      = "2026",
+  address   = "San Diego, California, United States",
+  publisher = "Association for Computational Linguistics",
+  url       = "https://aclanthology.org/2026.acl-demo.9/",
+  doi       = "10.18653/v1/2026.acl-demo.9",
+  pages     = "89--98",
 }
 ```
 

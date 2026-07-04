@@ -85,12 +85,22 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](https:
 
 ## 📑 Reference
 
+[Fast-MIA: Efficient and Scalable Membership Inference for LLMs](https://aclanthology.org/2026.acl-demo.9/) (ACL 2026 System Demonstrations)
+
 ```
-@misc{takahashi_ishihara_fastmia,
-  Author = {Hiromu Takahashi and Shotaro Ishihara},
-  Title = {{Fast-MIA}: Efficient and Scalable Membership Inference for LLMs},
-  Year = {2025},
-  Eprint = {arXiv:2510.23074},
-  URL = {https://arxiv.org/abs/2510.23074}
+@inproceedings{takahashi-ishihara-2026-fast,
+  title     = "Fast-{MIA}: Efficient and Scalable Membership Inference for {LLM}s",
+  author    = "Takahashi, Hiromu and Ishihara, Shotaro",
+  editor    = "Durrett, Greg and Jian, Ping",
+  booktitle = "Proceedings of the 64th Annual Meeting of the {A}ssociation for {C}omputational {L}inguistics (Volume 3: System Demonstrations)",
+  month     = jul,
+  year      = "2026",
+  address   = "San Diego, California, United States",
+  publisher = "Association for Computational Linguistics",
+  url       = "https://aclanthology.org/2026.acl-demo.9/",
+  doi       = "10.18653/v1/2026.acl-demo.9",
+  pages     = "89--98",
 }
 ```
+
+Preprint: [arXiv:2510.23074](https://arxiv.org/abs/2510.23074)
