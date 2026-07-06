@@ -19,7 +19,7 @@ import numpy as np
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from vllm.outputs import RequestOutput
-from vllm.transformers_utils.tokenizer import AnyTokenizer
+from vllm.tokenizers import TokenizerLike
 
 from .base import BaseMethod
 from .prefix_utils import compute_prefix_loss, extract_prefix, process_prefix
@@ -60,7 +60,7 @@ class CONReCaLLMethod(BaseMethod):
         texts: list[str],
         labels: list[int],
         model: LLM,
-        tokenizer: AnyTokenizer,
+        tokenizer: TokenizerLike,
         sampling_params: SamplingParams,
         lora_request: LoRARequest = None,
         data_config: dict[str, Any] = None,

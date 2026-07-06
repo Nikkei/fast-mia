@@ -115,13 +115,15 @@ class BaseMethod(ABC):
         if lora_request:
             lora_str = f"_{lora_request.lora_int_id}_{lora_request.lora_name}"
 
-        # Extract model ID if available (vLLM specific)
+        # Extract model ID if available. vLLM>=0.23 exposes ``model_config``
+        # directly on ``LLM``; fall back to ``llm_engine`` for robustness.
         model_id = ""
-        llm_engine = getattr(model, "llm_engine", None)
-        if llm_engine is not None:
+        model_config = getattr(model, "model_config", None)
+        if model_config is None:
+            llm_engine = getattr(model, "llm_engine", None)
             model_config = getattr(llm_engine, "model_config", None)
-            if model_config is not None:
-                model_id = getattr(model_config, "model", "")
+        if model_config is not None:
+            model_id = getattr(model_config, "model", "")
 
         return f"{model_id}_{texts_hash}_{params_str}{lora_str}"
 

@@ -217,7 +217,7 @@ echo "[4/5] Running fast-mia job..."
 # shellcheck disable=SC2086
 gcloud compute ssh "$INSTANCE_NAME" \
     --zone="$ZONE" $PROJECT_FLAG \
-    --command="cd ~/fast-mia && rm -f job.done job.failed && export PATH=\$HOME/.local/bin:\$PATH && nohup bash -c 'uv run --with \"vllm==0.15.1\" python main.py --config $CONFIG $EXTRA_ARGS > job.log 2>&1 && touch job.done || touch job.failed' > /dev/null 2>&1 & disown"
+    --command="cd ~/fast-mia && rm -f job.done job.failed && export PATH=\$HOME/.local/bin:\$PATH && nohup bash -c 'uv run --with \"vllm==0.23.0\" python main.py --config $CONFIG $EXTRA_ARGS > job.log 2>&1 && touch job.done || touch job.failed' > /dev/null 2>&1 & disown"
 
 # Poll until the job finishes
 echo "Waiting for job to complete (polling every 30s)..."

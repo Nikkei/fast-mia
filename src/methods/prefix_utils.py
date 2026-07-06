@@ -17,7 +17,7 @@ import random
 import numpy as np
 from vllm import LLM
 from vllm.outputs import RequestOutput
-from vllm.transformers_utils.tokenizer import AnyTokenizer
+from vllm.tokenizers import TokenizerLike
 
 
 def extract_prefix(texts: list[str], num_shots: int) -> list[str]:
@@ -37,7 +37,7 @@ def extract_prefix(texts: list[str], num_shots: int) -> list[str]:
 ## https://github.com/ruoyuxie/recall/blob/main/src/run.py
 def process_prefix(
     model: LLM,
-    tokenizer: AnyTokenizer,
+    tokenizer: TokenizerLike,
     prefix: list[str],
     avg_length: int,
     pass_window: bool,

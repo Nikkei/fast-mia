@@ -6,7 +6,7 @@ This file provides guidance to LLM agents when working with code in this reposit
 
 Fast-MIA is a framework for evaluating Membership Inference Attacks (MIA) against LLMs. It runs multiple MIA methods efficiently using vLLM and a shared model output cache.
 
-**Note**: vLLM is a runtime dependency, not listed in `pyproject.toml`. It is injected at execution time via `--with 'vllm==0.15.1'`.
+**Note**: vLLM is a runtime dependency, not listed in `pyproject.toml`. It is injected at execution time via `--with 'vllm==0.23.0'`.
 
 ## Commands
 
@@ -18,10 +18,10 @@ uv sync --group dev
 uv run pre-commit install
 
 # Run evaluation
-uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml
+uv run --with 'vllm==0.23.0' python main.py --config config/sample.yaml
 
 # Run with detailed report (metadata, per-sample scores, visualizations)
-uv run --with 'vllm==0.15.1' python main.py --config config/sample.yaml --detailed-report
+uv run --with 'vllm==0.23.0' python main.py --config config/sample.yaml --detailed-report
 
 # Lint and format (ruff)
 make lint
