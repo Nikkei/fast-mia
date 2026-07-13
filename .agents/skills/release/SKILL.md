@@ -4,8 +4,9 @@ description: >
   Automates release work for Fast-MIA based on semantic versioning.
   Use this skill for any request about cutting a release or bumping the version,
   such as "release it", "bump the version", "release as v0.5.0", or "create a release".
-  It infers patch/minor/major from the changes, then updates the version, commits,
-  tags, pushes, and creates the GitHub release (with release notes) in one flow.
+  It infers patch/minor/major from the changes, then updates the version, opens the
+  version-bump PR, and after the merge tags the release and creates the GitHub release
+  (with release notes) in one flow.
 ---
 
 # Release (Semantic Versioning automation)
@@ -18,9 +19,15 @@ following steps in one flow:
 
 1. Version decision (patch / minor / major)
 2. Update the `version` field in `pyproject.toml`
-3. Create the commit and tag
-4. Push to the remote
-5. Create the GitHub release (with release notes)
+3. Open a version-bump PR (the `main` branch is protected — see below)
+4. Merge the PR once CI is green and it has an approval
+5. Tag the merged commit on `main` and push the tag
+6. Create the GitHub release (with release notes)
+
+**Important**: `main` is protected by repository rules. Direct pushes are rejected
+(`GH013: Changes must be made through a pull request`), and PRs additionally require a
+review approval before they can be merged. The version bump therefore always goes
+through a PR, and the tag is only created **after** that PR is merged.
 
 ## Semantic versioning rules
 
@@ -70,18 +77,27 @@ When none of the above applies:
 ### 1. Check the current state
 
 ```bash
-# Get the latest tag
+# Get the latest tag (fetch tags first so the local repo is up to date)
+git fetch --tags
 git describe --tags --abbrev=0
 
 # List commits since the latest tag
-git log <latest-tag>..HEAD --oneline --no-merges
+git log <latest-tag>..HEAD --oneline
 
-# Confirm the working tree is clean
+# Confirm the working tree is clean and in sync with the remote
 git status
+git log origin/main..HEAD --oneline
+
+# Confirm CI on main is green
+gh run list --branch main --limit 3
 ```
 
 **Important**: If there are uncommitted changes, ask the user whether to commit them
 before releasing.
+
+Note: a previous release's version-bump commit may show up in this list (for v0.4.0 the
+tag was cut before its bump PR merged). Version-bump PRs are release plumbing — always
+exclude them from the release notes.
 
 ### 2. Decide the version
 
@@ -103,21 +119,47 @@ Changes:
 
 Update the `version` field in `pyproject.toml`.
 
-### 4. Commit, tag, and push
+### 4. Open the version-bump PR
+
+`main` is protected: never `git push` the bump commit straight to `main` (it is rejected
+with `GH013`). Always go through a release branch and a PR.
 
 ```bash
-# Commit
+git switch -c release/v<new-version>
 git add pyproject.toml
 git commit -m "chore: bump version to <new-version>"
+git push -u origin release/v<new-version>
 
-# Create the tag
-git tag v<new-version>
-
-# Push (both the commit and the tag)
-git push && git push origin v<new-version>
+gh pr create --base main --head release/v<new-version> \
+  --title "chore: bump version to <new-version>" \
+  --body "<summary of the changes since the previous tag>"
 ```
 
-### 5. Create the GitHub release
+### 5. Merge the PR, then tag
+
+Wait for CI, then merge. The base branch policy requires a **review approval**, so
+`gh pr merge` fails with `the base branch policy prohibits the merge` until someone
+approves. Do not bypass this on your own: report the block to the user and let them
+decide (get a reviewer, use `--auto` for auto-merge on approval, or merge with
+`--admin` if they have the rights).
+
+```bash
+# Wait for CI to finish
+gh pr checks <pr-number> --watch
+
+# Merge once approved (add --auto to merge automatically after approval)
+gh pr merge <pr-number> --squash --delete-branch
+```
+
+Only after the PR is merged, tag the resulting commit on `main`:
+
+```bash
+git switch main && git pull
+git tag v<new-version>
+git push origin v<new-version>
+```
+
+### 6. Create the GitHub release
 
 Generate release notes from the merged PRs since the previous tag and create the
 release with `gh release create`.
@@ -182,5 +224,11 @@ into the sections above before publishing.
 - Confirm CI is green before releasing (the GitHub Actions workflow).
 - If the user explicitly specifies a version, skip the semver inference and use that
   version.
-- Run the push and release creation only after the user confirms (they affect the
-  remote).
+- Push, PR creation, merge, and release creation affect the remote: run them only after
+  the user confirms.
+- Never push to `main` directly and never create the tag before the bump PR is merged —
+  a tag on an unmerged commit has to be deleted and recreated.
+- Exclude version-bump PRs from the release notes.
+- `uv.lock` also carries a `fast-mia` version entry, and it has drifted from
+  `pyproject.toml` in past releases. Check it, and mention it to the user if it is out
+  of sync (`uv lock` refreshes it).
