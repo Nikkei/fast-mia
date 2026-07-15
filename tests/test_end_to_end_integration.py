@@ -106,10 +106,10 @@ class TestEndToEndIntegration:
                 assert any(name in m for m in result_methods)
             # Number of data
             assert len(result.results_df) == len(config.methods)
-            # Metric values should be in percent format
+            # Metric values should be raw floats
             for col in ["auroc", "fpr95", "tpr05"]:
                 for val in result.results_df[col]:
-                    assert isinstance(val, str) and val.endswith("%")
+                    assert isinstance(val, float)
             # Check detailed_results
             assert len(result.detailed_results) == len(config.methods)
             # Check data_stats
@@ -123,6 +123,6 @@ class TestEndToEndIntegration:
             assert set(df.columns) >= {"method", "auroc", "fpr95", "tpr05"}
             assert pd.api.types.is_string_dtype(df["method"])
             assert len(df) == len(config.methods)
+            # Saved CSV keeps metric values numeric for downstream processing
             for col in ["auroc", "fpr95", "tpr05"]:
-                for val in df[col]:
-                    assert isinstance(val, str) and val.endswith("%")
+                assert pd.api.types.is_numeric_dtype(df[col])

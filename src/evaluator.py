@@ -123,11 +123,11 @@ class Evaluator:
             # Calculate metrics
             auroc, fpr95, tpr05 = get_metrics(scores, labels)
 
-            # Add results for DataFrame
+            # Add results for DataFrame (raw values; format only for display)
             results["method"].append(method.method_name)
-            results["auroc"].append(f"{auroc:.1%}")
-            results["fpr95"].append(f"{fpr95:.1%}")
-            results["tpr05"].append(f"{tpr05:.1%}")
+            results["auroc"].append(auroc)
+            results["fpr95"].append(fpr95)
+            results["tpr05"].append(tpr05)
 
             # Add detailed results for visualization
             detailed_results.append(
