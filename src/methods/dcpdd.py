@@ -15,6 +15,7 @@
 import gzip
 import json
 import logging
+import re
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -51,7 +52,7 @@ def download_c4_data(file_num: int) -> None:
 
 
 def update_freq_dist(
-    examples: list[str],
+    examples: list[dict[str, Any]],
     tokenizer: TokenizerLike,
     freq_dist: list[int],
     max_token_length: int,
@@ -86,6 +87,27 @@ class DCPDDMethod(BaseMethod):
         self.file_num = self.method_config.get("file_num", 15)
         self.max_token_length = self.method_config.get("max_token_length", 1024)
         self.alpha = self.method_config.get("alpha", 0.01)
+
+    def _freq_dist_cache_path(self, model_id: str) -> Path:
+        """Build the frequency distribution cache path.
+
+        The distribution depends on the tokenizer vocabulary, so the model ID
+        must be part of the cache file name; otherwise switching models would
+        silently reuse a distribution computed with a different tokenizer.
+
+        Args:
+            model_id: Model ID of the target model
+
+        Returns:
+            Path to the cache file
+        """
+        sanitized_model_id = (
+            re.sub(r"[^\w.-]+", "--", model_id) if model_id else "unknown-model"
+        )
+        return (
+            Path(".fastmia_cache")
+            / f"freq_dist_{sanitized_model_id}_{self.file_num}.json"
+        )
 
     def process_output(
         self, output: RequestOutput, input_ids: list[int], freq_dist: list[int]
@@ -139,9 +161,8 @@ class DCPDDMethod(BaseMethod):
         Returns:
             List of DC-PDD scores
         """
-        cache_dir = Path(".fastmia_cache")
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        cache_path = cache_dir / f"freq_dist_{self.file_num}.json"
+        cache_path = self._freq_dist_cache_path(self._get_model_id(model))
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
 
         if cache_path.exists():
             logging.info(f"Loading freq_dist from {cache_path}")
@@ -175,6 +196,11 @@ class DCPDDMethod(BaseMethod):
             logging.info(f"Saving frequency distribution to {cache_path}")
             with cache_path.open("w") as f:
                 json.dump(freq_dist, f)
+
+        # Apply the same normalization as get_outputs so that the token IDs
+        # encoded below stay aligned with the logprobs of the inference input
+        if data_config and not data_config.get("space_delimited_language", True):
+            texts = [text.replace(" ", "") for text in texts]
 
         # Get model outputs
         outputs = self.get_outputs(
