@@ -5,7 +5,7 @@ setup:
 	uv run pre-commit install
 
 test:
-	uv run pytest --cov tests -v
+	uv run pytest --cov=src tests -v
 
 lint:
 	uv run ruff check --fix --config pyproject.toml

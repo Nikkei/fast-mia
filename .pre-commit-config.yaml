@@ -12,7 +12,7 @@ repos:
   hooks:
     - id: pytest
       name: pytest
-      entry: uv run pytest --cov tests -v
+      entry: uv run pytest --cov=src tests -v
       language: system
       pass_filenames: false
       files: ^(src|tests)/.*\.py$

@@ -4,7 +4,12 @@ permissions:
 on:
   workflow_dispatch:
   pull_request:
-    paths: ["src/**/*.py"]
+    paths:
+      - "src/**/*.py"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/CI.yaml"
   push:
     branches: ["main"]
     tags: ["v[0-9]+.[0-9]+.[0-9]+"] # semantic versioning
@@ -37,10 +42,10 @@ jobs:
         run: uv sync --only-dev
 
       - name: Ruff Format
-        run: uv run ruff format --config pyproject.toml
+        run: uv run ruff format --check --config pyproject.toml
 
       - name: Ruff Check
-        run: uv run ruff check --fix --config pyproject.toml
+        run: uv run ruff check --config pyproject.toml
 
       - name: Run tests
-        run: uv run pytest --cov tests -v
+        run: uv run pytest --cov=src tests -v
