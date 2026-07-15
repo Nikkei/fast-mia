@@ -73,6 +73,9 @@ def process_prefix(
             cumulative_tokens += count
         else:
             break
+    # prefix[-0:] would return the whole list, so handle zero shots explicitly
+    if max_shots == 0:
+        return [], 0
     # Truncate the prefix to include only the maximum number of shots
     truncated_prefix = prefix[-max_shots:]
     num_shots = max_shots
