@@ -83,6 +83,24 @@ class BaseMethod(ABC):
             token_log_probs.append(list(prompt_logprob.values())[0].logprob)
         return token_log_probs
 
+    # SamplingParams fields that affect model outputs and must be part of the
+    # cache key. Omitting any of these would let two different sampling
+    # configurations collide on the same cache entry.
+    _CACHE_KEY_SAMPLING_FIELDS = (
+        "max_tokens",
+        "min_tokens",
+        "temperature",
+        "top_p",
+        "top_k",
+        "n",
+        "seed",
+        "logprobs",
+        "prompt_logprobs",
+        "presence_penalty",
+        "frequency_penalty",
+        "repetition_penalty",
+    )
+
     @staticmethod
     def _get_model_cache_key(
         texts: list[str],
@@ -108,7 +126,10 @@ class BaseMethod(ABC):
         texts_hash = hashlib.md5("|".join(text_hashes).encode()).hexdigest()
 
         # Convert sampling parameters to string
-        params_str = f"{sampling_params.max_tokens}_{sampling_params.temperature}_{sampling_params.top_p}"
+        params_str = "_".join(
+            str(getattr(sampling_params, field, None))
+            for field in BaseMethod._CACHE_KEY_SAMPLING_FIELDS
+        )
 
         # If LoRA request exists, add its ID and name
         lora_str = ""
