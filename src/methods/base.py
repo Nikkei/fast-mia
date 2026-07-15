@@ -76,11 +76,16 @@ class BaseMethod(ABC):
         Returns:
             List of token log probabilities
         """
+        # Look up each logprob by the actual prompt token ID: with
+        # prompt_logprobs > 0 the dict also contains top-k candidates, so the
+        # first entry is not guaranteed to be the prompt token itself.
         token_log_probs = []
-        for prompt_logprob in output.prompt_logprobs:
+        for token_id, prompt_logprob in zip(
+            output.prompt_token_ids, output.prompt_logprobs, strict=True
+        ):
             if prompt_logprob is None:
                 continue
-            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+            token_log_probs.append(prompt_logprob[token_id].logprob)
         return token_log_probs
 
     # SamplingParams fields that affect model outputs and must be part of the

@@ -1,6 +1,25 @@
 from types import SimpleNamespace
+from unittest import mock
 
 from src.methods.loss import LossMethod
+
+
+class TestExtractTokenLogProbs:
+    def test_picks_logprob_of_actual_token(self):
+        # With prompt_logprobs > 0 the dict also contains top-k candidates;
+        # the entry for the actual prompt token must be used, not the first.
+        def logprob(value):
+            entry = mock.MagicMock()
+            entry.logprob = value
+            return entry
+
+        output = mock.MagicMock()
+        output.prompt_token_ids = [10, 20]
+        output.prompt_logprobs = [
+            None,  # First token has no logprob
+            {5: logprob(-0.1), 20: logprob(-2.0)},  # 5 is a top-k candidate
+        ]
+        assert LossMethod._extract_token_log_probs(output) == [-2.0]
 
 
 def make_sampling_params(**overrides):

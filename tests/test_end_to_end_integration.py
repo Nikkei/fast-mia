@@ -41,6 +41,7 @@ class TestEndToEndIntegration:
             mock_output.prompt_logprobs = [
                 {0: mock_logprob} for _ in range(len(text.split()))
             ]
+            mock_output.prompt_token_ids = [0] * len(text.split())
             return mock_output
         
         # Mock generate to return appropriate outputs based on input
