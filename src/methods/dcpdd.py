@@ -91,9 +91,13 @@ class DCPDDMethod(BaseMethod):
     def _freq_dist_cache_path(self, model_id: str) -> Path:
         """Build the frequency distribution cache path.
 
-        The distribution depends on the tokenizer vocabulary, so the model ID
-        must be part of the cache file name; otherwise switching models would
-        silently reuse a distribution computed with a different tokenizer.
+        The distribution depends on the tokenizer vocabulary as well as the
+        truncation length used while counting tokens, so both the model ID and
+        ``max_token_length`` must be part of the cache file name. Otherwise
+        switching models would silently reuse a distribution computed with a
+        different tokenizer, and changing ``max_token_length`` would reuse a
+        distribution counted with a different truncation length, either of
+        which produces silently wrong scores.
 
         Args:
             model_id: Model ID of the target model
@@ -106,7 +110,7 @@ class DCPDDMethod(BaseMethod):
         )
         return (
             Path(".fastmia_cache")
-            / f"freq_dist_{sanitized_model_id}_{self.file_num}.json"
+            / f"freq_dist_{sanitized_model_id}_{self.file_num}_{self.max_token_length}.json"
         )
 
     def process_output(

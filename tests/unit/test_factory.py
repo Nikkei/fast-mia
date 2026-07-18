@@ -40,20 +40,18 @@ class TestMethodFactory:
         with pytest.raises(ValueError, match="must include a 'type'"):
             MethodFactory.create_method({"params": {}})
 
-    def test_warns_when_ref_is_not_last(self, caplog):
+    def test_raises_when_ref_is_not_last(self):
         configs = [
             {"type": "ref", "params": {"reference_model": {"model_id": "dummy"}}},
             {"type": "loss", "params": {}},
         ]
-        with caplog.at_level("WARNING"):
+        with pytest.raises(ValueError, match="Move 'ref' to the end"):
             MethodFactory.create_methods(configs)
-        assert any("Move 'ref' to the end" in r.message for r in caplog.records)
 
-    def test_no_warning_when_ref_is_last(self, caplog):
+    def test_no_error_when_ref_is_last(self):
         configs = [
             {"type": "loss", "params": {}},
             {"type": "ref", "params": {"reference_model": {"model_id": "dummy"}}},
         ]
-        with caplog.at_level("WARNING"):
-            MethodFactory.create_methods(configs)
-        assert not any("Move 'ref' to the end" in r.message for r in caplog.records)
+        methods = MethodFactory.create_methods(configs)
+        assert [type(m) for m in methods] == [LossMethod, RefMethod]

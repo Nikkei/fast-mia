@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from typing import Any
 
 from .base import BaseMethod
@@ -91,9 +90,9 @@ class MethodFactory:
         """
         method_types = [method_config.get("type") for method_config in methods_config]
         if "ref" in method_types and method_types.index("ref") != len(method_types) - 1:
-            logging.warning(
+            raise ValueError(
                 "The 'ref' method destroys the global vLLM parallel state when "
-                "releasing its reference model, which can break inference for "
+                "releasing its reference model, which breaks inference for "
                 "methods that run after it. Move 'ref' to the end of the "
                 "methods list in your config."
             )
