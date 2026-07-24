@@ -88,6 +88,15 @@ class MethodFactory:
         Returns:
             List of created methods
         """
+        method_types = [method_config.get("type") for method_config in methods_config]
+        if "ref" in method_types and method_types.index("ref") != len(method_types) - 1:
+            raise ValueError(
+                "The 'ref' method destroys the global vLLM parallel state when "
+                "releasing its reference model, which breaks inference for "
+                "methods that run after it. Move 'ref' to the end of the "
+                "methods list in your config."
+            )
+
         methods = []
         for method_config in methods_config:
             method = MethodFactory.create_method(method_config)

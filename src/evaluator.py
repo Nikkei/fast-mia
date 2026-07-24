@@ -104,27 +104,30 @@ class Evaluator:
         detailed_results = []
 
         for method in self.methods:
-            # Build arguments based on method requirements
-            args = [texts]
+            # Build keyword arguments based on method requirements
+            kwargs = {
+                "texts": texts,
+                "model": self.model_loader.model,
+                "lora_request": lora_request,
+                "data_config": config.data,
+            }
             if method.requires_labels:
-                args.append(labels)
-            args.append(self.model_loader.model)
+                kwargs["labels"] = labels
             if method.requires_tokenizer:
-                args.append(self.model_loader.tokenizer)
+                kwargs["tokenizer"] = self.model_loader.tokenizer
             if method.requires_sampling_params:
-                args.append(sampling_params)
-            args.append(lora_request)
+                kwargs["sampling_params"] = sampling_params
 
-            scores = method.run(*args, data_config=config.data)
+            scores = method.run(**kwargs)
 
             # Calculate metrics
             auroc, fpr95, tpr05 = get_metrics(scores, labels)
 
-            # Add results for DataFrame
+            # Add results for DataFrame (raw values; format only for display)
             results["method"].append(method.method_name)
-            results["auroc"].append(f"{auroc:.1%}")
-            results["fpr95"].append(f"{fpr95:.1%}")
-            results["tpr05"].append(f"{tpr05:.1%}")
+            results["auroc"].append(auroc)
+            results["fpr95"].append(fpr95)
+            results["tpr05"].append(tpr05)
 
             # Add detailed results for visualization
             detailed_results.append(

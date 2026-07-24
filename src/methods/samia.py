@@ -128,19 +128,20 @@ class SaMIAMethod(BaseMethod):
         outputs = self.get_outputs(
             prefixs, model, samia_params, lora_request, data_config
         )
+        data_config = data_config or {}
+        # Same default as the evaluator (config.data text_length)
+        text_length = data_config.get("text_length", 32)
         scores = []
         for text, output in zip(texts, outputs, strict=True):
-            suffix_ref = get_suffix(
-                text, 1 - self.prefix_ratio, data_config.get("text_length")
-            )
+            suffix_ref = get_suffix(text, 1 - self.prefix_ratio, text_length)
             rouge_scores = []
             for i in range(self.num_samples):
                 output_text = output.outputs[i].text
                 suffix_cand = get_suffix(
-                    output_text, 1 - self.prefix_ratio, data_config.get("text_length")
+                    output_text, 1 - self.prefix_ratio, text_length
                 )
                 if self.zlib:
-                    if data_config.get("space_delimited_language"):
+                    if data_config.get("space_delimited_language", True):
                         zlib_cand = zlib.compress(" ".join(suffix_cand).encode("utf-8"))
                     else:
                         zlib_cand = zlib.compress("".join(suffix_cand).encode("utf-8"))

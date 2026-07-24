@@ -15,9 +15,30 @@
 import random
 
 import numpy as np
+import pandas as pd
 import torch
 from sklearn.metrics import auc, roc_curve
 from transformers import set_seed
+
+METRIC_COLUMNS = ("auroc", "fpr95", "tpr05")
+
+
+def format_results_df(results_df: pd.DataFrame) -> pd.DataFrame:
+    """Format raw metric values as percentage strings for display
+
+    Args:
+        results_df: DataFrame with raw metric values
+
+    Returns:
+        Copy of the DataFrame with metric columns formatted as percentages
+    """
+    formatted_df = results_df.copy()
+    for column in METRIC_COLUMNS:
+        if column in formatted_df.columns:
+            formatted_df[column] = formatted_df[column].map(
+                lambda value: f"{value:.1%}"
+            )
+    return formatted_df
 
 
 def fix_seed(seed: int = 0) -> None:

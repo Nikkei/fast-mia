@@ -73,6 +73,9 @@ def process_prefix(
             cumulative_tokens += count
         else:
             break
+    # prefix[-0:] would return the whole list, so handle zero shots explicitly
+    if max_shots == 0:
+        return [], 0
     # Truncate the prefix to include only the maximum number of shots
     truncated_prefix = prefix[-max_shots:]
     num_shots = max_shots
@@ -91,11 +94,16 @@ def compute_prefix_loss(output: RequestOutput, prefix_token_length: int) -> floa
     Returns:
         Negative mean log-likelihood (loss)
     """
+    # Look up each logprob by the actual prompt token ID (see
+    # BaseMethod._extract_token_log_probs for the rationale)
     token_log_probs = []
-    for i, prompt_logprob in enumerate(output.prompt_logprobs):
+    token_logprob_pairs = zip(
+        output.prompt_token_ids, output.prompt_logprobs, strict=True
+    )
+    for i, (token_id, prompt_logprob) in enumerate(token_logprob_pairs):
         if i < prefix_token_length:
             continue
         if prompt_logprob is None:
             continue
-        token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+        token_log_probs.append(prompt_logprob[token_id].logprob)
     return -np.mean(token_log_probs)

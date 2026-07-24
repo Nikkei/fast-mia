@@ -32,7 +32,7 @@ uv run ruff format --config pyproject.toml
 # Run all tests
 make test
 # or manually:
-uv run pytest --cov tests -v
+uv run pytest --cov=src tests -v
 
 # Run a single test file
 uv run pytest tests/unit/test_factory.py

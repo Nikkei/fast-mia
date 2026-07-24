@@ -150,7 +150,7 @@ Available method types and their parameters:
 |------|-------------|----------------|
 | `loss` | Uses the model's loss | – |
 | `zlib` | Uses the ratio of information content calculated by Zlib compression | – |
-| `ref` | Uses the difference in loss between the target model and a reference model | `reference_model` (required. Model configuration for the reference model, same fields as the `model` block). |
+| `ref` | Uses the difference in loss between the target model and a reference model. It must be **last** in the `methods` list: releasing the reference model destroys the global vLLM parallel state, which breaks inference for methods that run after it. Fast-MIA raises a `ValueError` at startup if `ref` is not last. | `reference_model` (required. Model configuration for the reference model, same fields as the `model` block). |
 | `mink` | https://github.com/swj0419/detect-pretrain-code | `ratio` (`0.0–1.0`, default `0.5`). |
 | `dcpdd` | https://github.com/zhang-wei-chao/DC-PDD | `file_num` (number of C4 text files, default `15`), `max_token_length` (max token length, default `1024`), `alpha` (upper bound of score, default `0.01`). |
 | `lower` | Uses the ratio of loss after lowercasing the text | – |

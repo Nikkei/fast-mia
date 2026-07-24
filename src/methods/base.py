@@ -76,12 +76,35 @@ class BaseMethod(ABC):
         Returns:
             List of token log probabilities
         """
+        # Look up each logprob by the actual prompt token ID: with
+        # prompt_logprobs > 0 the dict also contains top-k candidates, so the
+        # first entry is not guaranteed to be the prompt token itself.
         token_log_probs = []
-        for prompt_logprob in output.prompt_logprobs:
+        for token_id, prompt_logprob in zip(
+            output.prompt_token_ids, output.prompt_logprobs, strict=True
+        ):
             if prompt_logprob is None:
                 continue
-            token_log_probs.append(list(prompt_logprob.values())[0].logprob)
+            token_log_probs.append(prompt_logprob[token_id].logprob)
         return token_log_probs
+
+    # SamplingParams fields that affect model outputs and must be part of the
+    # cache key. Omitting any of these would let two different sampling
+    # configurations collide on the same cache entry.
+    _CACHE_KEY_SAMPLING_FIELDS = (
+        "max_tokens",
+        "min_tokens",
+        "temperature",
+        "top_p",
+        "top_k",
+        "n",
+        "seed",
+        "logprobs",
+        "prompt_logprobs",
+        "presence_penalty",
+        "frequency_penalty",
+        "repetition_penalty",
+    )
 
     @staticmethod
     def _get_model_cache_key(
@@ -108,24 +131,40 @@ class BaseMethod(ABC):
         texts_hash = hashlib.md5("|".join(text_hashes).encode()).hexdigest()
 
         # Convert sampling parameters to string
-        params_str = f"{sampling_params.max_tokens}_{sampling_params.temperature}_{sampling_params.top_p}"
+        params_str = "_".join(
+            str(getattr(sampling_params, field, None))
+            for field in BaseMethod._CACHE_KEY_SAMPLING_FIELDS
+        )
 
         # If LoRA request exists, add its ID and name
         lora_str = ""
         if lora_request:
             lora_str = f"_{lora_request.lora_int_id}_{lora_request.lora_name}"
 
-        # Extract model ID if available. vLLM>=0.23 exposes ``model_config``
-        # directly on ``LLM``; fall back to ``llm_engine`` for robustness.
-        model_id = ""
+        model_id = BaseMethod._get_model_id(model)
+
+        return f"{model_id}_{texts_hash}_{params_str}{lora_str}"
+
+    @staticmethod
+    def _get_model_id(model: LLM) -> str:
+        """Extract model ID from a vLLM model if available.
+
+        vLLM>=0.23 exposes ``model_config`` directly on ``LLM``; fall back to
+        ``llm_engine`` for robustness.
+
+        Args:
+            model: LLM model
+
+        Returns:
+            Model ID, or an empty string if it cannot be determined
+        """
         model_config = getattr(model, "model_config", None)
         if model_config is None:
             llm_engine = getattr(model, "llm_engine", None)
             model_config = getattr(llm_engine, "model_config", None)
-        if model_config is not None:
-            model_id = getattr(model_config, "model", "")
-
-        return f"{model_id}_{texts_hash}_{params_str}{lora_str}"
+        if model_config is None:
+            return ""
+        return getattr(model_config, "model", "")
 
     @classmethod
     def get_cache_stats(cls) -> dict[str, Any]:

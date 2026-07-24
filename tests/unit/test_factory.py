@@ -39,3 +39,19 @@ class TestMethodFactory:
     def test_missing_method_type(self):
         with pytest.raises(ValueError, match="must include a 'type'"):
             MethodFactory.create_method({"params": {}})
+
+    def test_raises_when_ref_is_not_last(self):
+        configs = [
+            {"type": "ref", "params": {"reference_model": {"model_id": "dummy"}}},
+            {"type": "loss", "params": {}},
+        ]
+        with pytest.raises(ValueError, match="Move 'ref' to the end"):
+            MethodFactory.create_methods(configs)
+
+    def test_no_error_when_ref_is_last(self):
+        configs = [
+            {"type": "loss", "params": {}},
+            {"type": "ref", "params": {"reference_model": {"model_id": "dummy"}}},
+        ]
+        methods = MethodFactory.create_methods(configs)
+        assert [type(m) for m in methods] == [LossMethod, RefMethod]

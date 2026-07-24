@@ -89,10 +89,10 @@ class TestEvaluator:
         assert isinstance(result.results_df, pd.DataFrame)
         assert set(result.results_df.columns) == {"method", "auroc", "fpr95", "tpr05"}
         assert list(result.results_df["method"]) == ["loss", "zlib"]
-        # Check that metric values are in percentage format
+        # Check that metric values are raw floats in [0, 1]
         for col in ["auroc", "fpr95", "tpr05"]:
             for val in result.results_df[col]:
-                assert isinstance(val, str) and val.endswith("%")
+                assert isinstance(val, float) and (math.isnan(val) or 0.0 <= val <= 1.0)
         # Check detailed_results
         assert len(result.detailed_results) == 2
         assert result.detailed_results[0]["method_name"] == "loss"
@@ -107,7 +107,7 @@ class TestEvaluator:
         evaluator = Evaluator(mock_data_loader, mock_model_loader, [method])
         result = evaluator.evaluate(config)
         # AUROCが100%になること
-        assert result.results_df.loc[0, "auroc"] == "100.0%"
+        assert result.results_df.loc[0, "auroc"] == 1.0
 
     def test_evaluate_multiple_methods(self, config, mock_data_loader, mock_model_loader):
         # Check that multiple method results are correctly aggregated
@@ -138,10 +138,10 @@ class TestEvaluator:
             "loss", "lower", "zlib", "mink_0.1", "pac", "recall"
         ]
         assert set(result.results_df["method"]) == set(expected_methods)
-        # Check that metric values are in percentage format
+        # Check that metric values are raw floats in [0, 1]
         for col in ["auroc", "fpr95", "tpr05"]:
             for val in result.results_df[col]:
-                assert isinstance(val, str) and val.endswith("%")
+                assert isinstance(val, float) and (math.isnan(val) or 0.0 <= val <= 1.0)
 
 class TestMetrics:
     def test_get_metrics_perfect(self):

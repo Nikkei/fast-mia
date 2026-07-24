@@ -24,7 +24,14 @@ from .base import BaseMethod
 
 
 class RefMethod(BaseMethod):
-    """Reference model based membership inference method"""
+    """Reference model based membership inference method
+
+    Note:
+        Releasing the reference model calls destroy_model_parallel(), which
+        tears down global vLLM state shared with the target model. Place this
+        method last in the config's methods list so no other method runs
+        inference afterwards.
+    """
 
     def __init__(self, method_config: dict[str, Any] = None) -> None:
         """Initialize Reference model based method

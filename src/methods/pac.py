@@ -93,6 +93,19 @@ class PACMethod(BaseMethod):
         self.alpha = self.method_config.get("alpha", 0.3)
         self.N = self.method_config.get("N", 5)
 
+        # eda() returns no augmented sentences for alpha <= 0 or N < 1, which
+        # would silently misalign the calibrated scores (NaN). Fail fast.
+        if self.alpha <= 0:
+            raise ValueError(
+                f"PAC method requires 'alpha' > 0, but got {self.alpha}. "
+                "Update methods[].params.alpha in your config."
+            )
+        if self.N < 1:
+            raise ValueError(
+                f"PAC method requires 'N' >= 1, but got {self.N}. "
+                "Update methods[].params.N in your config."
+            )
+
     def process_output(self, output: RequestOutput) -> float:
         """Process model output and calculate Polarized Distance
 

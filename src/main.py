@@ -27,7 +27,7 @@ from .evaluator import Evaluator
 from .methods.factory import MethodFactory
 from .model_loader import ModelLoader
 from .result_writer import ResultWriter
-from .utils import fix_seed
+from .utils import fix_seed, format_results_df
 
 
 def main() -> None:
@@ -121,7 +121,7 @@ def main() -> None:
         "\nEvaluation Results:\n"
         + "=" * 50
         + "\n"
-        + eval_result.results_df.to_string(index=False)
+        + format_results_df(eval_result.results_df).to_string(index=False)
         + "\n"
         + "=" * 50
     )

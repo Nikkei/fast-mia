@@ -26,6 +26,7 @@ import pandas as pd
 import yaml
 
 from .config import Config
+from .utils import format_results_df
 
 
 def _get_git_info() -> dict[str, str]:
@@ -276,7 +277,7 @@ class ResultWriter:
                 "RESULTS SUMMARY",
                 "-" * 60,
                 "",
-                results_df.to_string(index=False),
+                format_results_df(results_df).to_string(index=False),
                 "",
                 "-" * 60,
                 "BEST PERFORMERS",
