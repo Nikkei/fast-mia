@@ -1,6 +1,6 @@
 [project]
 name = "fast-mia"
-version = "0.4.1"
+version = "0.4.2"
 authors = [
     {name = "Hiromu Takahashi", email = "hiromu.takahashi56@gmail.com"},
     {name = "Shotaro Ishihara", email = "shotaro.ishihara@nex.nikkei.com"},
