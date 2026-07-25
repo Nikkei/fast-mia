@@ -93,7 +93,7 @@ class TestPACRun:
         texts = ["the quick brown fox jumps"]
 
         probs = [-5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0]
-        original_output = make_output(probs)  # polarized distance = 8.0
+        # polarized distance = 8.0
 
         def fake_get_outputs(input_texts, *args, **kwargs):
             # One entry per input text (originals or the N augmentations).
