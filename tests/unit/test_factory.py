@@ -1,5 +1,6 @@
 import pytest
 from src.methods.factory import MethodFactory
+from src.methods.aeca import AECAMethod
 from src.methods.conrecall import CONReCaLLMethod
 from src.methods.dcpdd import DCPDDMethod
 from src.methods.loss import LossMethod
@@ -25,6 +26,7 @@ class TestMethodFactory:
         ("dcpdd", DCPDDMethod, {"file_num": 10}),
         ("ref", RefMethod, {"reference_model": {"model_id": "dummy"}}),
         ("neighbour", NeighbourMethod, {}),
+        ("aeca", AECAMethod, {}),
     ])
     def test_create_method(self, type_, cls, params):
         method = MethodFactory.create_method({"type": type_, "params": params})

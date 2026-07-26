@@ -1,0 +1,152 @@
+# Copyright (c) 2025 Nikkei Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import gzip
+import json
+import logging
+import re
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+from vllm import LLM
+from vllm.tokenizers import TokenizerLike
+
+
+def download_c4_data(file_num: int) -> None:
+    output_dir = Path("data")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    base_url = "https://huggingface.co/datasets/allenai/c4/resolve/main/en/"
+
+    for i in range(file_num):
+        fname = f"c4-train.{i:05d}-of-01024.json.gz"
+        url = f"{base_url}{fname}"
+        save_path = output_dir / fname
+
+        if save_path.exists():
+            logging.info(f"Skipping {fname} (already exists)")
+            continue
+
+        logging.info(f"Downloading {fname}...")
+        try:
+            urllib.request.urlretrieve(url, save_path)
+        except Exception as e:
+            logging.error(f"Failed to download {fname}: {e}")
+
+
+def update_freq_dist(
+    examples: list[dict[str, Any]],
+    tokenizer: TokenizerLike,
+    freq_dist: list[int],
+    max_token_length: int,
+) -> list[int]:
+    example_texts = [example["text"] for example in examples]
+    # vLLM>=0.23 wraps the tokenizer in a thread-safe pool that only exposes a
+    # whitelist of methods (and the bundled transformers dropped the deprecated
+    # ``batch_encode_plus``). Use the standard ``__call__`` API, which batch
+    # encodes a list of texts and returns the same ``input_ids``.
+    example_input_ids = tokenizer(
+        example_texts, truncation=True, max_length=max_token_length
+    )["input_ids"]
+    for input_ids in example_input_ids:
+        for token_id in input_ids:
+            freq_dist[token_id] += 1
+    return freq_dist
+
+
+def freq_dist_cache_path(model_id: str, file_num: int, max_token_length: int) -> Path:
+    """Build the frequency distribution cache path.
+
+    The distribution depends on the tokenizer vocabulary as well as the
+    truncation length used while counting tokens, so both the model ID and
+    ``max_token_length`` must be part of the cache file name. Otherwise
+    switching models would silently reuse a distribution computed with a
+    different tokenizer, and changing ``max_token_length`` would reuse a
+    distribution counted with a different truncation length, either of
+    which produces silently wrong scores.
+
+    Methods that count tokens the same way share this path, so the ~30 minute
+    computation only runs once even when several of them are evaluated.
+
+    Args:
+        model_id: Model ID of the target model
+        file_num: Number of C4 files used for counting
+        max_token_length: Truncation length used while counting tokens
+
+    Returns:
+        Path to the cache file
+    """
+    sanitized_model_id = (
+        re.sub(r"[^\w.-]+", "--", model_id) if model_id else "unknown-model"
+    )
+    return (
+        Path(".fastmia_cache")
+        / f"freq_dist_{sanitized_model_id}_{file_num}_{max_token_length}.json"
+    )
+
+
+def load_or_build_freq_dist(
+    model: LLM,
+    tokenizer: TokenizerLike,
+    cache_path: Path,
+    file_num: int,
+    max_token_length: int,
+) -> list[int]:
+    """Load the C4 token frequency distribution, building it when not cached
+
+    Args:
+        model: LLM model, used for its vocabulary size
+        tokenizer: Tokenizer used to count tokens
+        cache_path: Path of the cache file
+        file_num: Number of C4 files used for counting
+        max_token_length: Truncation length used while counting tokens
+
+    Returns:
+        Token counts indexed by token ID
+    """
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if cache_path.exists():
+        logging.info(f"Loading freq_dist from {cache_path}")
+        with cache_path.open() as f:
+            return json.load(f)
+
+    logging.info("Calculating frequency distribution. It takes about ~30 minutes.")
+    logging.info(
+        "Once calculated, it will be cached and calculation is not required next time."
+    )
+    # Download C4 data files
+    download_c4_data(file_num)
+
+    # calculate frequency distribution from C4 data
+    freq_dist = [0] * model.llm_engine.model_config.hf_config.vocab_size
+
+    for i in range(file_num):
+        fname = f"c4-train.{i:05d}-of-01024.json.gz"
+        logging.info(f"Processing {fname}...")
+        with gzip.open(Path("data") / fname, "rt", encoding="utf-8") as f:
+            examples = []
+            for example in f:
+                example = json.loads(example)
+                examples.append(example)
+            freq_dist = update_freq_dist(
+                examples, tokenizer, freq_dist, max_token_length
+            )
+
+    logging.info(f"Saving frequency distribution to {cache_path}")
+    with cache_path.open("w") as f:
+        json.dump(freq_dist, f)
+
+    return freq_dist
