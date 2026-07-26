@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from unittest import mock
 
+from src.methods.base import BaseMethod
 from src.methods.loss import LossMethod
 
 
@@ -76,3 +77,84 @@ class TestModelCacheKey:
         key1 = self.get_key(params)
         key2 = LossMethod._get_model_cache_key(["other text"], params, self.model)
         assert key1 != key2
+
+    def test_lora_request_changes_key(self):
+        params = make_sampling_params()
+        lora = SimpleNamespace(lora_int_id=1, lora_name="adapter")
+        key_without = LossMethod._get_model_cache_key(self.texts, params, self.model)
+        key_with = LossMethod._get_model_cache_key(
+            self.texts, params, self.model, lora
+        )
+        assert key_without != key_with
+
+
+class TestModelCacheBehavior:
+    def setup_method(self):
+        BaseMethod.clear_cache()
+        BaseMethod.set_max_cache_size(1000)
+
+    def teardown_method(self):
+        BaseMethod.clear_cache()
+        BaseMethod.set_max_cache_size(1000)
+
+    def make_method(self, generated):
+        method = LossMethod({})
+        model = mock.MagicMock()
+        model.model_config.model = "test-model"
+        model.generate.return_value = generated
+        return method, model
+
+    def test_second_call_hits_cache_and_skips_generate(self):
+        method, model = self.make_method(generated=["out"])
+        params = make_sampling_params()
+
+        first = method.get_outputs(["hello"], model, params)
+        second = method.get_outputs(["hello"], model, params)
+
+        assert first == ["out"]
+        assert second == ["out"]
+        # Model inference only runs on the miss, not the hit.
+        model.generate.assert_called_once()
+        stats = BaseMethod.get_cache_stats()
+        assert stats["model_hits"] == 1
+        assert stats["model_misses"] == 1
+        assert stats["model_hit_rate"] == "50.00%"
+
+    def test_space_stripped_for_non_space_delimited_language(self):
+        method, model = self.make_method(generated=["out"])
+        params = make_sampling_params()
+        method.get_outputs(
+            ["a b c"], model, params, data_config={"space_delimited_language": False}
+        )
+        called_texts = model.generate.call_args[0][0]
+        assert called_texts == ["abc"]
+
+    def test_max_cache_size_evicts_oldest_entry(self):
+        method, model = self.make_method(generated=["out"])
+        params = make_sampling_params()
+
+        BaseMethod.set_max_cache_size(1)
+        method.get_outputs(["first"], model, params)
+        method.get_outputs(["second"], model, params)
+
+        # Only the most recent entry survives eviction.
+        assert BaseMethod.get_cache_stats()["model_cache_size"] == 1
+
+    def test_clear_cache_resets_stats(self):
+        method, model = self.make_method(generated=["out"])
+        method.get_outputs(["hello"], model, make_sampling_params())
+
+        BaseMethod.clear_cache()
+
+        stats = BaseMethod.get_cache_stats()
+        assert stats["model_misses"] == 0
+        assert stats["model_cache_size"] == 0
+        assert stats["model_hit_rate"] == "0.00%"
+
+
+class TestCleanupModel:
+    def test_deletes_model_and_frees_memory(self):
+        # torch and vllm are mocked in conftest; assert the teardown runs cleanly.
+        with mock.patch("src.methods.base.destroy_model_parallel") as destroy:
+            LossMethod.cleanup_model(mock.MagicMock())
+        destroy.assert_called_once()

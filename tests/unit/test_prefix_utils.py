@@ -1,6 +1,10 @@
 from unittest import mock
 
-from src.methods.prefix_utils import process_prefix
+from src.methods.prefix_utils import (
+    compute_prefix_loss,
+    extract_prefix,
+    process_prefix,
+)
 
 
 def make_model(max_model_len):
@@ -55,3 +59,53 @@ class TestProcessPrefix:
         )
         assert num_shots == 0
         assert result == []
+
+
+class TestExtractPrefix:
+    def test_selects_requested_number_of_shots(self):
+        texts = ["a", "b", "c", "d", "e"]
+        result = extract_prefix(texts, num_shots=3)
+        assert len(result) == 3
+        assert set(result) <= set(texts)
+
+    def test_caps_at_available_texts(self):
+        texts = ["a", "b"]
+        result = extract_prefix(texts, num_shots=10)
+        assert sorted(result) == ["a", "b"]
+
+    def test_does_not_mutate_input(self):
+        texts = ["a", "b", "c"]
+        extract_prefix(texts, num_shots=2)
+        assert texts == ["a", "b", "c"]
+
+
+def make_prefix_output(token_log_probs):
+    """Build a mock RequestOutput whose prompt token IDs index their logprobs."""
+    output = mock.MagicMock()
+    output.prompt_token_ids = list(range(len(token_log_probs)))
+    prompt_logprobs = []
+    for token_id, value in enumerate(token_log_probs):
+        if value is None:
+            prompt_logprobs.append(None)
+            continue
+        entry = mock.MagicMock()
+        entry.logprob = value
+        prompt_logprobs.append({token_id: entry})
+    output.prompt_logprobs = prompt_logprobs
+    return output
+
+
+class TestComputePrefixLoss:
+    def test_excludes_prefix_tokens(self):
+        # 4 tokens, exclude the first 2: loss = -mean([-2.0, -4.0]) = 3.0
+        output = make_prefix_output([-1.0, -1.0, -2.0, -4.0])
+        assert compute_prefix_loss(output, prefix_token_length=2) == 3.0
+
+    def test_skips_none_logprobs(self):
+        # First token has no logprob (None) and must be ignored.
+        output = make_prefix_output([None, -2.0, -4.0])
+        assert compute_prefix_loss(output, prefix_token_length=0) == 3.0
+
+    def test_no_prefix_uses_all_tokens(self):
+        output = make_prefix_output([-2.0, -4.0])
+        assert compute_prefix_loss(output, prefix_token_length=0) == 3.0
