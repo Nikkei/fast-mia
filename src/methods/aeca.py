@@ -26,7 +26,19 @@ from .token_freq import freq_dist_cache_path, load_or_build_freq_dist
 
 
 class AECAMethod(BaseMethod):
-    """AECA (Adaptive Entropic Convolutional Analysis) membership inference method"""
+    """AECA (Adaptive Entropic Convolutional Analysis) membership inference method
+
+    The reference implementation scales logits by a temperature of 1.5 before
+    the softmax. vLLM only exposes the logprob of the prompt token, not
+    full-vocabulary logits, so the partition function cannot be recomputed at
+    another temperature and the streams below are always evaluated at T = 1.0.
+    Setting ``sampling_parameters.temperature`` does not change this: prompt
+    logprobs are computed from raw logits (vLLM defaults to
+    ``logprobs_mode='raw_logprobs'``), and temperature only affects sampling of
+    generated tokens. Since ``sigma(S)`` and ``sigma(L)`` are scaled
+    differently at T = 1, the best ``lambda_coef`` differs from the value the
+    paper reports.
+    """
 
     requires_tokenizer: bool = True
 
