@@ -138,6 +138,7 @@ Closest existing methods for reference:
 - `dcpdd` — DC-PDD tokenizer-based scoring
 - `pac` — PAC-based scoring
 - `neighbour` — masked-LM neighbour calibration (target loss minus mean neighbour loss)
+- `aeca` — volatility divergence of the C4-calibrated token probability stream
 
 **Present the design and wait for explicit user approval before proceeding to Phase 3.**
 
@@ -194,6 +195,12 @@ Rules:
 - If `run()` override is needed, add it after `process_output()` following the signature in `BaseMethod`
 - Use `self.get_outputs(...)` inside `run()`, never `model.generate(...)` directly
 - If loading a temporary model inside `run()`, call `self.cleanup_model(model)` at the end
+- If the method needs reference-corpus token frequencies (C4), call
+  `token_freq.load_or_build_freq_dist(...)` with a cache path from
+  `token_freq.freq_dist_cache_path(...)` instead of counting tokens again.
+  `dcpdd` and `aeca` share that cache, so the ~30 minute count runs only once
+  when their `file_num` and `max_token_length` match. See `src/methods/aeca.py`
+  for a worked example.
 
 ### 3b. Register in `src/methods/factory.py`
 

@@ -60,6 +60,7 @@ Fast-MIA supports the following MIA methods:
 | | **Ref** (`ref`) | Uses the difference in loss between the target model and a reference model |
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
 | | **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
+| | **AECA** (`aeca`) | https://github.com/kecy03/AECA |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |
 | | **Neighbour** (`neighbour`) | https://github.com/justusmattern27/neighbour-mia |
 | | **PAC** (`pac`) | https://github.com/yyy01/PAC |
