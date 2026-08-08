@@ -1,5 +1,5 @@
 Fast-MIA
-Copyright (c) 2026 Nikkei Inc.
+Copyright (c) 2025-2026 Nikkei Inc.
 
 The following files contain modifications of original MIT or Apache 2.0 licensed code:
 - src/methods/mink.py: Modified from [detect-pretrain-code](https://github.com/swj0419/detect-pretrain-code) to support vLLM
