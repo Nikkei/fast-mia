@@ -14,6 +14,7 @@
 
 from typing import Any
 
+from .aeca import AECAMethod
 from .base import BaseMethod
 from .conrecall import CONReCaLLMethod
 from .dcpdd import DCPDDMethod
@@ -39,6 +40,7 @@ METHOD_BUILDERS = {
     "dcpdd": DCPDDMethod,
     "ref": RefMethod,
     "neighbour": NeighbourMethod,
+    "aeca": AECAMethod,
 }
 
 

@@ -1,5 +1,5 @@
 Fast-MIA
-Copyright (c) 2025 Nikkei Inc.
+Copyright (c) 2025-2026 Nikkei Inc.
 
 The following files contain modifications of original MIT or Apache 2.0 licensed code:
 - src/methods/mink.py: Modified from [detect-pretrain-code](https://github.com/swj0419/detect-pretrain-code) to support vLLM
@@ -9,3 +9,4 @@ The following files contain modifications of original MIT or Apache 2.0 licensed
 - src/methods/samia.py: Modified from [samia](https://github.com/nlp-titech/samia) to support vLLM
 - src/methods/dcpdd.py: Modified from [DC-PDD](https://github.com/zhang-wei-chao/DC-PDD) to support vLLM
 - src/methods/neighbour.py: Modified from [Neighbour](https://github.com/justusmattern27/neighbour-mia) to support vLLM
+- src/methods/aeca.py: Modified from [AECA](https://github.com/kecy03/AECA) to support vLLM

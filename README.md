@@ -37,6 +37,7 @@ The identifier is the name used in this framework's configuration.
 || **Ref** (`ref`) | Uses the difference in loss between the target model and a reference model |
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
 || **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
+|| **AECA** (`aeca`) | https://github.com/kecy03/AECA |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |
 || **Neighbour** (`neighbour`) | https://github.com/justusmattern27/neighbour-mia |
 || **PAC** (`pac`) | https://github.com/yyy01/PAC |
@@ -136,6 +137,7 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 |                  | Min-K% Prob (K=0.8)     | 69.5 / 69.5 | 11s / 57s (×5.18)            | 84.3 / 84.3  | 18.1 / 18.3 |
 |                  | Min-K% Prob (K=1.0)     | 69.4 / 69.4 | 11s / 57s (×5.18)            | 84.3 / 84.3  | 18.3 / 18.3 |
 |                  | DC-PDD                  | 67.4 / 67.4 | 11s / 57s (×5.18)            | 84.8 / 84.8  | 12.4 / 12.4 |
+|                  | AECA                    | 68.9 / 68.9 | 11s / 57s (×5.18)            | 84.3 / 84.3  | 21.4 / 21.7 |
 | text alternation | Lowercase               | 64.1 / 64.1 | 23s / 1m59s (×5.17)          | 83.5 / 83.8  | 11.1 / 11.6 |
 |                  | Neighbour               | 57.6 / 56.7 | 21m15s / 1h25m55s (×4.04)     | 88.9 / 91.8  | 6.7 / 6.5 |
 |                  | PAC                     | 73.4 / 73.4 | 1m10s / 6m24s (×5.49)        | 77.9 / 77.9  | 24.0 / 24.3 |

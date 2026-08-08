@@ -87,6 +87,13 @@ methods:
       dropout: 0.7
       top_k: 10
       max_length: 512
+  - type: "aeca"
+    params:
+      lambda_coef: 5.0
+      alpha: 1.0
+      file_num: 15
+      max_token_length: 1024
+      default_i_ref: 0.5
 
 # Output settings
 output_dir: "./results" 

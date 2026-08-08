@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .aeca import AECAMethod
 from .base import BaseMethod
 from .conrecall import CONReCaLLMethod
 from .dcpdd import DCPDDMethod
@@ -40,4 +41,5 @@ __all__ = [
     "DCPDDMethod",
     "RefMethod",
     "NeighbourMethod",
+    "AECAMethod",
 ]
