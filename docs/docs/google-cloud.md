@@ -15,6 +15,24 @@ Before using the GCP scripts, ensure you have:
 
 ## Quick Start
 
+Jobs use `vllm==0.29.0` with Python 3.12. New instances use
+`common-cu129-ubuntu-2204-nvidia-580` from the
+[Deep Learning VM image catalog](https://docs.cloud.google.com/deep-learning-vm/docs/images).
+The default PyPI dependency resolution includes CUDA 13 packages, which require
+[NVIDIA driver 580 or newer](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html).
+The image's system CUDA toolkit and the Python environment's CUDA runtime can
+have different versions; the host driver must support the runtime.
+
+The submission script also includes `vllm-bnb-plugin==0.0.3` in the runtime
+environment so that `config/llama30b-exp-ref.yaml` can use BitsAndBytes for both
+the target and reference model. vLLM 0.29.0 requires this external plugin;
+`bitsandbytes` alone is not sufficient.
+
+Before launching a job, `gcp/check_driver.sh` checks the driver on both new and
+reused instances. Older instances using driver 570 must have their driver upgraded
+or be replaced with a new instance. A failed preflight leaves the instance running;
+stop it manually if you are not going to upgrade it and retry.
+
 ```bash
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
@@ -132,6 +150,30 @@ gsutil -m cp -r gs://your-bucket/fast-mia-results/YYYYMMDD-HHMMSS ./results/
 - Monitor your spending in the [Google Cloud Console Billing](https://console.cloud.google.com/billing) page.
 
 ## Troubleshooting
+
+### Validating the vLLM upgrade
+
+Local unit tests mock vLLM and do not verify CUDA kernels or real model loading.
+If reusing a local `uv.lock` from an older setup, refresh the dependencies whose
+minimum versions increased (`aiohttp>=3.13.3`, `huggingface-hub>=1.28.0`):
+
+```bash
+uv lock --upgrade-package aiohttp --upgrade-package huggingface-hub
+```
+
+`uv.lock` is not tracked in this repository; run this in the checkout transferred
+to the VM if it contains an old lockfile.
+On the GPU VM, start with the small sample configuration:
+
+```bash
+bash gcp/check_driver.sh
+uv run --with 'vllm==0.29.0' python main.py --config config/sample.yaml --detailed-report
+```
+
+Check that scores are finite and the report and plots are produced. Then run your
+evaluation configuration, including any reference model, LoRA adapters, and
+generation methods you use. These paths require separate GPU validation; existing
+benchmark results have not been recomputed for this upgrade.
 
 ### GPU quota exceeded
 
