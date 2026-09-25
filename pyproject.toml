@@ -3,11 +3,12 @@ name = "fast-mia"
 version = "0.5.0"
 authors = [
     {name = "Hiromu Takahashi", email = "hiromu.takahashi56@gmail.com"},
-    {name = "Shotaro Ishihara", email = "shotaro.ishihara@nex.nikkei.com"},
+    {name = "Shotaro Ishihara", email = "upura0@gmail.com"},
 ]
 maintainers = [
     {name = "Hiromu Takahashi", email = "hiromu.takahashi56@gmail.com"},
-    {name = "Shotaro Ishihara", email = "shotaro.ishihara@nex.nikkei.com"},
+    {name = "Shotaro Ishihara", email = "upura0@gmail.com"},
+    {name = "Kazumasa Omura", email = "kazumasa.omura@nex.nikkei.com"},
 ]
 description = "A framework designed to streamline the evaluation of Membership Inference Attacks (MIA) against Large Language Models (LLMs). By leveraging vLLM, it enables fast and flexible execution and assessment of various representative MIA techniques."
 readme = "README.md"
