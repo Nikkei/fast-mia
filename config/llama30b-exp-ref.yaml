@@ -1,3 +1,5 @@
+# Run with the bitsandbytes plugin (required by vLLM 0.29.0):
+# uv run --with 'vllm==0.29.0' --with 'vllm-bnb-plugin==0.0.3' python main.py --config config/llama30b-exp-ref.yaml
 # Model settings
 model:
   model_id: "huggyllama/llama-30b"

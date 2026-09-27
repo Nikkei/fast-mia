@@ -132,7 +132,7 @@ else
         --accelerator="type=${ACCELERATOR_TYPE},count=${ACCELERATOR_COUNT}" \
         --maintenance-policy=TERMINATE \
         --boot-disk-size="$BOOT_DISK_SIZE" \
-        --image-family=common-cu128-ubuntu-2204-nvidia-570 \
+        --image-family=common-cu129-ubuntu-2204-nvidia-580 \
         --image-project=deeplearning-platform-release \
         --scopes=storage-full \
         --metadata="install-nvidia-driver=true"
@@ -210,6 +210,12 @@ fi
 
 # ── Step 4: Run the job ──────────────────────────────────
 echo ""
+echo "Checking NVIDIA driver compatibility..."
+# shellcheck disable=SC2086
+gcloud compute ssh "$INSTANCE_NAME" \
+    --zone="$ZONE" $PROJECT_FLAG \
+    --command="bash ~/fast-mia/gcp/check_driver.sh"
+
 echo "[4/5] Running fast-mia job..."
 # Run the job via nohup so it survives SSH disconnections.
 # The job writes stdout/stderr to ~/fast-mia/job.log and touches
@@ -217,7 +223,7 @@ echo "[4/5] Running fast-mia job..."
 # shellcheck disable=SC2086
 gcloud compute ssh "$INSTANCE_NAME" \
     --zone="$ZONE" $PROJECT_FLAG \
-    --command="cd ~/fast-mia && rm -f job.done job.failed && export PATH=\$HOME/.local/bin:\$PATH && nohup bash -c 'uv run --with \"vllm==0.23.0\" python main.py --config $CONFIG $EXTRA_ARGS > job.log 2>&1 && touch job.done || touch job.failed' > /dev/null 2>&1 & disown"
+    --command="cd ~/fast-mia && rm -f job.done job.failed && export PATH=\$HOME/.local/bin:\$PATH && nohup bash -c 'uv run --with \"vllm==0.29.0\" --with \"vllm-bnb-plugin==0.0.3\" python main.py --config $CONFIG $EXTRA_ARGS > job.log 2>&1 && touch job.done || touch job.failed' > /dev/null 2>&1 & disown"
 
 # Poll until the job finishes
 echo "Waiting for job to complete (polling every 30s)..."
