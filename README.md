@@ -38,6 +38,7 @@ The identifier is the name used in this framework's configuration.
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
 || **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
 || **AECA** (`aeca`) | https://github.com/kecy03/AECA |
+|| **SURP** (`surp`) | Surprising low-entropy token selection (https://arxiv.org/abs/2407.21248) |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |
 || **Neighbour** (`neighbour`) | https://github.com/justusmattern27/neighbour-mia |
 || **PAC** (`pac`) | https://github.com/yyy01/PAC |

@@ -26,6 +26,7 @@ from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .ref import RefMethod
 from .samia import SaMIAMethod
+from .surp import SURPMethod
 from .zlib import ZlibMethod
 
 METHOD_BUILDERS = {
@@ -41,6 +42,7 @@ METHOD_BUILDERS = {
     "ref": RefMethod,
     "neighbour": NeighbourMethod,
     "aeca": AECAMethod,
+    "surp": SURPMethod,
 }
 
 

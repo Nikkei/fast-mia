@@ -90,6 +90,11 @@ methods:
       file_num: 15
       max_token_length: 1024
       default_i_ref: 0.5
+  - type: "surp"
+    params:
+      ratio: 0.2
+      entropy_percentile: 50.0
+      window_size: 5
 
 # Output settings
 output_dir: "./results" 
