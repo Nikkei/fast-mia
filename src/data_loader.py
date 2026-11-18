@@ -31,6 +31,7 @@ class DataLoader:
         data_format: str = "csv",
         text_column: str = "text",
         label_column: str = "label",
+        group_column: str | None = None,
     ) -> None:
         """Initialize the data loader
 
@@ -39,9 +40,11 @@ class DataLoader:
             data_format: Data format ("csv", "jsonl", "json", "parquet", "huggingface")
             text_column: Name of the text column
             label_column: Name of the label column
+            group_column: Optional column identifying document/group membership
         """
         self.text_column = text_column
         self.label_column = label_column
+        self.group_column = group_column
         self.data = None
 
         # Load data (only if data_path is specified)
@@ -50,6 +53,19 @@ class DataLoader:
                 f"Loading data (data_path={data_path}, data_format={data_format})..."
             )
             self.data = self._load_data(data_path, data_format)
+
+    def get_groups(self) -> list[str] | None:
+        """Return group identifiers for each sample when ``group_column`` is configured."""
+        if not self.group_column:
+            return None
+        if self.data is None:
+            raise ValueError("Data is not loaded.")
+        if self.group_column not in self.data.columns:
+            raise ValueError(
+                f"Group column '{self.group_column}' not found in data. "
+                "Check data.group_column in your config."
+            )
+        return [str(val) for val in self.data[self.group_column].tolist()]
 
     def _load_data(
         self, data_path: str | Path | None, data_format: str

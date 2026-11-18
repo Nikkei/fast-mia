@@ -242,3 +242,38 @@ label,loss,zlib,mink_0.2,recall
 ```
 
 This allows for post-hoc analysis, custom visualizations, or statistical testing.
+
+## Dataset Inference & Statistical Hypothesis Testing
+
+Single-sample MIA often exhibits high variance at low FPR, whereas aggregating MIA scores across multiple chunks from a document, book, or dataset provides strong statistical evidence. Fast-MIA automatically computes two-sample statistical tests comparing member vs. non-member score distributions:
+
+- **Welch's t-test** (`welch_p_value`): Unequal-variance two-sample t-test.
+- **Mann-Whitney U test** (`mannwhitney_p_value`): Non-parametric rank test.
+- **Permutation Test** (`permutation_p_value`): Monte Carlo permutation test on the difference in means.
+- **Cohen's d** (`cohens_d`): Pooled-variance standardized effect size.
+
+### Group-Level Testing (`data.group_column`)
+
+Specify `group_column` in `data` (e.g., `book_id`, `repo_name`, `domain`) to evaluate group-level hypothesis tests (`group_inference.csv`). Both within-group paired comparisons and suspect-group vs. global non-member reference-pool comparisons are supported automatically.
+
+### `dataset_inference` Block (Optional)
+
+```yaml
+data:
+  data_path: "./data/book_chunks.csv"
+  format: "csv"
+  text_column: "text"
+  label_column: "label"
+  group_column: "book_id" # Optional group identifier
+
+dataset_inference:
+  enabled: true
+  alternative: "greater"          # "greater", "less", or "two-sided"
+  n_permutations: 1000
+  chunk_sizes: [2, 5, 10, 20, 50, 100]
+  n_bootstrap: 50
+  alpha: 0.05
+  seed: 42
+```
+
+In `--detailed-report` mode, Fast-MIA also writes `chunk_scaling.csv` and `figures/chunk_scaling.png`, showing how $-\log_{10}(p)$ and empirical detection power scale with the number of chunks $m$.
