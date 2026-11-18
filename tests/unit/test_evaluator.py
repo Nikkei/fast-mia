@@ -143,6 +143,50 @@ class TestEvaluator:
             for val in result.results_df[col]:
                 assert isinstance(val, float) and (math.isnan(val) or 0.0 <= val <= 1.0)
 
+    def test_evaluate_audit_mode_unlabeled(self, config, mock_model_loader):
+        unlabeled_loader = mock.MagicMock()
+        unlabeled_loader.get_data.return_value = (
+            ["sample one", "sample two", "sample three"],
+            None,
+        )
+        method = mock.MagicMock()
+        method.method_name = "loss"
+        method.requires_labels = False
+        method.requires_tokenizer = False
+        method.requires_sampling_params = True
+        method.run.return_value = [-1.2, -0.8, -1.0]
+
+        evaluator = Evaluator(unlabeled_loader, mock_model_loader, [method])
+        result = evaluator.evaluate(config)
+
+        assert result.labels is None
+        assert result.data_stats["audit_mode"] is True
+        assert result.data_stats["num_samples"] == 3
+        assert result.data_stats["num_members"] is None
+        assert set(result.results_df.columns) == {
+            "method",
+            "mean_score",
+            "std_score",
+            "min_score",
+            "median_score",
+            "max_score",
+        }
+        assert abs(result.results_df.loc[0, "mean_score"] - (-1.0)) < 1e-6
+
+    def test_evaluate_audit_mode_rejects_label_dependent_method(
+        self, config, mock_model_loader
+    ):
+        unlabeled_loader = mock.MagicMock()
+        unlabeled_loader.get_data.return_value = (["sample one", "sample two"], None)
+
+        method = mock.MagicMock()
+        method.method_name = "conrecall"
+        method.requires_labels = True
+
+        evaluator = Evaluator(unlabeled_loader, mock_model_loader, [method])
+        with pytest.raises(ValueError, match="unlabeled audit mode"):
+            evaluator.evaluate(config)
+
 class TestMetrics:
     def test_get_metrics_perfect(self):
         # Check that when all scores are perfectly separated

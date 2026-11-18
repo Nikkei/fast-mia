@@ -154,6 +154,22 @@ class TestDataLoader:
                 label_column="label",
             )
 
+    def test_unlabeled_audit_mode_returns_none_labels(self, tmp_path: Path):
+        """Test loading unlabeled data when label_column is None"""
+        unlabeled_csv = tmp_path / "audit.csv"
+        pd.DataFrame({"text": ["first suspect text", "second suspect text"]}).to_csv(
+            unlabeled_csv, index=False
+        )
+        loader = DataLoader(
+            data_path=unlabeled_csv,
+            data_format="csv",
+            text_column="text",
+            label_column=None,
+        )
+        texts, labels = loader.get_data(text_length=2)
+        assert texts == ["first suspect", "second suspect"]
+        assert labels is None
+
     @mock.patch("src.data_loader.load_dataset")
     def test_load_wikimia(self, mock_load_dataset):
         """Test loading data from WikiMIA dataset"""

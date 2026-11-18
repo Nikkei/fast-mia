@@ -96,7 +96,12 @@ class ResultWriter:
         duration = end_time - self.start_time
         git_info = _get_git_info()
 
-        metadata = {
+        label_column = (
+            self.config.data["label_column"]
+            if "label_column" in self.config.data
+            else "label"
+        )
+        metadata: dict[str, Any] = {
             "experiment": {
                 "start_time": self.start_time.isoformat(),
                 "end_time": end_time.isoformat(),
@@ -119,7 +124,7 @@ class ResultWriter:
                 "format": self.config.data.get("format", "csv"),
                 "text_length": self.config.data.get("text_length"),
                 "text_column": self.config.data.get("text_column", "text"),
-                "label_column": self.config.data.get("label_column", "label"),
+                "label_column": label_column,
                 **data_stats,
             },
             "sampling_parameters": self.config.sampling_parameters,
@@ -181,18 +186,27 @@ class ResultWriter:
     def save_detailed_scores(
         self,
         results: list[dict[str, Any]],
-        labels: list[int],
+        labels: list[int] | None = None,
+        texts: list[str] | None = None,
     ) -> Path:
         """Save detailed scores for each sample
 
         Args:
             results: List of method results with scores
-            labels: Ground truth labels
+            labels: Ground truth labels, or None in audit mode
+            texts: Optional sample texts (included in audit mode when provided)
 
         Returns:
             Path to saved scores file
         """
-        scores_data = {"label": labels}
+        scores_data: dict[str, Any] = {}
+        if labels is not None:
+            scores_data["label"] = labels
+        else:
+            num_samples = len(results[0]["scores"]) if results else 0
+            scores_data["sample_id"] = list(range(num_samples))
+            if texts is not None:
+                scores_data["text"] = texts
 
         for result in results:
             method_name = result["method_name"]
@@ -231,6 +245,7 @@ class ResultWriter:
         Returns:
             Path to saved report file
         """
+        audit_mode = bool(data_stats.get("audit_mode", False))
         lines = [
             "=" * 60,
             "FAST-MIA EVALUATION REPORT",
@@ -238,6 +253,7 @@ class ResultWriter:
             "",
             f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             f"Run ID: {self.run_dir.name}",
+            f"Mode: {'Unlabeled Audit' if audit_mode else 'Supervised Evaluation'}",
             "",
             "-" * 60,
             "MODEL CONFIGURATION",
@@ -252,13 +268,25 @@ class ResultWriter:
             f"Format: {self.config.data.get('format', 'csv')}",
             f"Text Length: {self.config.data.get('text_length')} words",
             f"Total Samples: {data_stats.get('num_samples', 'N/A')}",
-            f"Members: {data_stats.get('num_members', 'N/A')}",
-            f"Non-members: {data_stats.get('num_nonmembers', 'N/A')}",
-            "",
-            "-" * 60,
-            "METHODS EVALUATED",
-            "-" * 60,
         ]
+        if audit_mode:
+            lines.append("Labels: None (unlabeled audit mode)")
+        else:
+            lines.extend(
+                [
+                    f"Members: {data_stats.get('num_members', 'N/A')}",
+                    f"Non-members: {data_stats.get('num_nonmembers', 'N/A')}",
+                ]
+            )
+
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                "METHODS EVALUATED",
+                "-" * 60,
+            ]
+        )
 
         for method_config in self.config.methods:
             method_type = method_config.get("type", "unknown")
@@ -278,39 +306,44 @@ class ResultWriter:
                 "-" * 60,
                 "",
                 format_results_df(results_df).to_string(index=False),
-                "",
-                "-" * 60,
-                "BEST PERFORMERS",
-                "-" * 60,
             ]
         )
 
-        valid_results = [r for r in results if not pd.isna(r["auroc"])]
-        if valid_results:
-            best_auroc = max(valid_results, key=lambda x: x["auroc"])
-            lines.append(
-                f"Best AUROC: {best_auroc['method_name']} ({best_auroc['auroc']:.3f})"
+        if not audit_mode:
+            lines.extend(
+                [
+                    "",
+                    "-" * 60,
+                    "BEST PERFORMERS",
+                    "-" * 60,
+                ]
             )
-
-            best_fpr95 = min(
-                [r for r in valid_results if not pd.isna(r["fpr95"])],
-                key=lambda x: x["fpr95"],
-                default=None,
-            )
-            if best_fpr95:
+            valid_results = [r for r in results if not pd.isna(r["auroc"])]
+            if valid_results:
+                best_auroc = max(valid_results, key=lambda x: x["auroc"])
                 lines.append(
-                    f"Best FPR@95%TPR: {best_fpr95['method_name']} ({best_fpr95['fpr95']:.3f})"
+                    f"Best AUROC: {best_auroc['method_name']} ({best_auroc['auroc']:.3f})"
                 )
 
-            best_tpr05 = max(
-                [r for r in valid_results if not pd.isna(r["tpr05"])],
-                key=lambda x: x["tpr05"],
-                default=None,
-            )
-            if best_tpr05:
-                lines.append(
-                    f"Best TPR@5%FPR: {best_tpr05['method_name']} ({best_tpr05['tpr05']:.3f})"
+                best_fpr95 = min(
+                    [r for r in valid_results if not pd.isna(r["fpr95"])],
+                    key=lambda x: x["fpr95"],
+                    default=None,
                 )
+                if best_fpr95:
+                    lines.append(
+                        f"Best FPR@95%TPR: {best_fpr95['method_name']} ({best_fpr95['fpr95']:.3f})"
+                    )
+
+                best_tpr05 = max(
+                    [r for r in valid_results if not pd.isna(r["tpr05"])],
+                    key=lambda x: x["tpr05"],
+                    default=None,
+                )
+                if best_tpr05:
+                    lines.append(
+                        f"Best TPR@5%FPR: {best_tpr05['method_name']} ({best_tpr05['tpr05']:.3f})"
+                    )
 
         lines.extend(
             [
@@ -340,13 +373,15 @@ class ResultWriter:
         results_df: pd.DataFrame,
         results: list[dict[str, Any]],
         data_stats: dict[str, Any],
+        texts: list[str] | None = None,
     ) -> dict[str, Path]:
-        """Save default outputs (config, results.csv, report.txt)
+        """Save default outputs (plus detailed_scores.csv in audit mode)
 
         Args:
             results_df: DataFrame with evaluation results
             results: List of method results with detailed info
             data_stats: Data statistics
+            texts: Optional sample texts for audit score output
 
         Returns:
             Dictionary mapping output names to file paths
@@ -355,6 +390,10 @@ class ResultWriter:
 
         paths["config"] = self.copy_config()
         paths["results_csv"] = self.save_results_csv(results_df)
+        if data_stats.get("audit_mode"):
+            paths["detailed_scores"] = self.save_detailed_scores(
+                results, labels=None, texts=texts
+            )
         paths["report"] = self.generate_summary_report(results_df, results, data_stats)
 
         return paths
@@ -363,20 +402,22 @@ class ResultWriter:
         self,
         results_df: pd.DataFrame,
         results: list[dict[str, Any]],
-        labels: list[int],
+        labels: list[int] | None,
         cache_stats: dict[str, Any],
         data_stats: dict[str, Any],
         end_time: datetime,
+        texts: list[str] | None = None,
     ) -> dict[str, Path]:
         """Save all outputs
 
         Args:
             results_df: DataFrame with evaluation results
             results: List of method results with detailed info
-            labels: Ground truth labels
+            labels: Ground truth labels, or None in audit mode
             cache_stats: Cache statistics
             data_stats: Data statistics
             end_time: Experiment end time
+            texts: Optional sample texts
 
         Returns:
             Dictionary mapping output names to file paths
@@ -385,7 +426,9 @@ class ResultWriter:
 
         paths["config"] = self.copy_config()
         paths["results_csv"] = self.save_results_csv(results_df)
-        paths["detailed_scores"] = self.save_detailed_scores(results, labels)
+        paths["detailed_scores"] = self.save_detailed_scores(
+            results, labels=labels, texts=texts
+        )
         paths["metadata"] = self.save_metadata(end_time, cache_stats, data_stats)
         paths["report"] = self.generate_summary_report(results_df, results, data_stats)
 
