@@ -200,7 +200,7 @@ CONFIG_LOCAL_PATH="$PROJECT_ROOT/$CONFIG"
 if [[ ! -f "$CONFIG_LOCAL_PATH" ]]; then
     CONFIG_LOCAL_PATH="$CONFIG"
 fi
-DATA_PATH=$(grep 'data_path:' "$CONFIG_LOCAL_PATH" | head -1 | sed 's/.*data_path:[[:space:]]*["'\'']\?\([^"'\''#]*\)["'\'']\?.*/\1/' | xargs)
+DATA_PATH=$(grep 'data_path:' "$CONFIG_LOCAL_PATH" | head -1 | sed -E 's/.*data_path:[[:space:]]*["'\'']?([^"'\''#]*)["'\'']?.*/\1/' | xargs)
 if [[ -n "$DATA_PATH" && "$DATA_PATH" == ./* && -f "$PROJECT_ROOT/$DATA_PATH" ]]; then
     echo "Transferring data file: $DATA_PATH"
     # shellcheck disable=SC2086
