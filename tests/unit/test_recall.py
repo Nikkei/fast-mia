@@ -110,3 +110,26 @@ class TestReCaLLRun:
         # Unconditional texts must have had their spaces stripped.
         unconditional_texts = get_outputs.call_args_list[0][0][0]
         assert unconditional_texts == ["member", "nonmem"]
+
+    def test_excludes_target_sample_from_its_own_prefix(self):
+        method = ReCaLLMethod({"num_shots": 1, "pass_window": True})
+        texts = ["mem_alpha", "non_alpha", "non_beta"]
+        labels = [1, 0, 0]
+        uncond = [make_output([-2.0, -4.0]) for _ in texts]
+        cond = [make_output([-1.0, -1.0, -2.0, -4.0]) for _ in texts]
+
+        with mock.patch.object(
+            method, "get_outputs", side_effect=[uncond, cond]
+        ) as get_outputs:
+            method.run(
+                texts,
+                labels,
+                mock.MagicMock(),
+                make_tokenizer(prefix_token_length=2),
+                mock.MagicMock(),
+            )
+
+        conditional_texts = get_outputs.call_args_list[1][0][0]
+        for idx, text in enumerate(texts):
+            prefix_part = conditional_texts[idx].split("<s>")[0]
+            assert text not in prefix_part
