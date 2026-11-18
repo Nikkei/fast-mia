@@ -61,8 +61,9 @@ def main() -> None:
     # Fix random seed
     fix_seed(args.seed)
 
-    # Load config
+    # Load and validate config
     config = Config(args.config)
+    config.validate()
 
     # Get text length (word count)
     text_length = config.data.get("text_length", 32)

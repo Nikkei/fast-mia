@@ -151,9 +151,12 @@ Declare any number of methods. Each entry looks like:
 
 ```yaml
 - type: "method_name"
+  name: "custom_display_name" # Optional: custom identifier when running the same method with multiple parameter sets
   params:
     # method-specific keys
 ```
+
+If the same method type is declared multiple times without a custom `name`, Fast-MIA automatically disambiguates duplicate names using differing scalar parameters (or numeric suffixes `_1`, `_2`, ...).
 
 Available method types and their parameters:
 
@@ -186,7 +189,7 @@ By default, Fast-MIA saves the following files in a timestamped folder:
 results/
 └── YYYYMMDD-HHMMSS/
     ├── config.yaml    # Copy of the configuration used
-    ├── results.csv    # Summary metrics (AUROC, FPR@95, TPR@5)
+    ├── results.csv    # Summary metrics (AUROC, FPR@95, TPR@5, TPR@1) + per-method runtime & cache deltas
     └── report.txt     # Human-readable summary report
 ```
 
@@ -204,13 +207,14 @@ uv run --with 'vllm==0.29.0' python main.py --config config/sample.yaml --detail
 results/
 └── YYYYMMDD-HHMMSS/           # Timestamped folder for each run
     ├── config.yaml            # Copy of the configuration used
-    ├── results.csv            # Summary metrics (AUROC, FPR@95, TPR@5)
+    ├── results.csv            # Summary metrics (AUROC, FPR@95, TPR@5, TPR@1) + per-method runtime & cache deltas
     ├── detailed_scores.csv    # Per-sample scores for each method
     ├── metadata.json          # Execution metadata (JSON format)
     ├── metadata.yaml          # Execution metadata (YAML format)
     ├── report.txt             # Human-readable summary report
     └── figures/
-        ├── roc_curves.png         # ROC curves for all methods
+        ├── roc_curves.png         # Linear ROC curves for all methods
+        ├── roc_curves_log.png     # Log-scale ROC curves highlighting low-FPR regime
         ├── score_distributions.png # Score histograms (member vs non-member)
         └── metrics_comparison.png  # Bar chart comparing metrics
 ```
@@ -228,7 +232,8 @@ The metadata files (`metadata.json` / `metadata.yaml`) include:
 | `data` | Dataset path, format, sample counts |
 | `sampling_parameters` | vLLM sampling configuration |
 | `methods` | List of evaluated methods with parameters |
-| `cache` | Cache hit/miss statistics |
+| `cache` | Cache hit/miss statistics (global and per-method) |
+| `method_stats` | Per-method execution time (`elapsed_seconds`) and cache hit/miss deltas |
 
 ### Detailed Scores
 

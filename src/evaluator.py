@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
@@ -100,8 +101,9 @@ class Evaluator:
             lora_request = self.model_loader.get_lora_request(lora_config)
 
         # Evaluate with each method
-        results = defaultdict(list)
-        detailed_results = []
+        results: dict[str, list[Any]] = defaultdict(list)
+        detailed_results: list[dict[str, Any]] = []
+        per_method_stats: list[dict[str, Any]] = []
 
         for method in self.methods:
             # Build keyword arguments based on method requirements
@@ -118,18 +120,33 @@ class Evaluator:
             if method.requires_sampling_params:
                 kwargs["sampling_params"] = sampling_params
 
+            cache_before = BaseMethod.get_cache_stats()
+            method_start = time.perf_counter()
             scores = method.run(**kwargs)
+            elapsed_seconds = time.perf_counter() - method_start
+            cache_after = BaseMethod.get_cache_stats()
+
+            cache_hits_delta = cache_after.get("model_hits", 0) - cache_before.get(
+                "model_hits", 0
+            )
+            cache_misses_delta = cache_after.get("model_misses", 0) - cache_before.get(
+                "model_misses", 0
+            )
 
             # Calculate metrics
-            auroc, fpr95, tpr05 = get_metrics(scores, labels)
+            auroc, fpr95, tpr05, tpr01 = get_metrics(scores, labels)
 
             # Add results for DataFrame (raw values; format only for display)
             results["method"].append(method.method_name)
             results["auroc"].append(auroc)
             results["fpr95"].append(fpr95)
             results["tpr05"].append(tpr05)
+            results["tpr01"].append(tpr01)
+            results["elapsed_seconds"].append(elapsed_seconds)
+            results["cache_hits"].append(cache_hits_delta)
+            results["cache_misses"].append(cache_misses_delta)
 
-            # Add detailed results for visualization
+            # Add detailed results for visualization and reporting
             detailed_results.append(
                 {
                     "method_name": method.method_name,
@@ -137,11 +154,24 @@ class Evaluator:
                     "auroc": auroc,
                     "fpr95": fpr95,
                     "tpr05": tpr05,
+                    "tpr01": tpr01,
+                    "elapsed_seconds": elapsed_seconds,
+                    "cache_hits": cache_hits_delta,
+                    "cache_misses": cache_misses_delta,
+                }
+            )
+            per_method_stats.append(
+                {
+                    "method_name": method.method_name,
+                    "elapsed_seconds": elapsed_seconds,
+                    "cache_hits": cache_hits_delta,
+                    "cache_misses": cache_misses_delta,
                 }
             )
 
         # Get cache stats after evaluation
         cache_stats = BaseMethod.get_cache_stats()
+        cache_stats["per_method"] = per_method_stats
         logging.info(f"Cache stats after evaluation: {cache_stats}")
 
         return EvaluationResult(
