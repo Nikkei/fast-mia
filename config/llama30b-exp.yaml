@@ -90,6 +90,11 @@ methods:
       file_num: 15
       max_token_length: 1024
       default_i_ref: 0.5
+  - type: "camia"
+    params:
+      signal: "combined"
+      aggregation: "edgington"
+      diversity_calibration: true
 
 # Output settings
 output_dir: "./results" 
