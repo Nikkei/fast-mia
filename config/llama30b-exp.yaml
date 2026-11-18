@@ -35,6 +35,11 @@ methods:
     params: {}
   - type: "zlib"
     params: {}
+  - type: "blind"
+    params:
+      features: "tfidf"
+      n_splits: 5
+      seed: 42
   - type: "mink"
     params:
       ratio: 0.1
