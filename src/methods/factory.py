@@ -16,6 +16,7 @@ from typing import Any
 
 from .aeca import AECAMethod
 from .base import BaseMethod
+from .camia import CAMIAMethod
 from .conrecall import CONReCaLLMethod
 from .dcpdd import DCPDDMethod
 from .loss import LossMethod
@@ -41,6 +42,7 @@ METHOD_BUILDERS = {
     "ref": RefMethod,
     "neighbour": NeighbourMethod,
     "aeca": AECAMethod,
+    "camia": CAMIAMethod,
 }
 
 

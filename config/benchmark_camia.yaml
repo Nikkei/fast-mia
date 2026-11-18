@@ -1,0 +1,49 @@
+# Benchmark configuration for CAMIA (Context-Aware MIA, arXiv:2409.13745)
+# Run with:
+#   uv run --with 'vllm==0.29.0' python main.py --config config/benchmark_camia.yaml --detailed-report
+# Note: On T4 GPUs (no bfloat16), add `dtype: float16` under `model`.
+
+model:
+  model_id: "EleutherAI/pythia-2.8b"
+  trust_remote_code: true
+  max_num_seqs: 64
+
+sampling_parameters:
+  max_tokens: 1
+  prompt_logprobs: 0
+  temperature: 0.0
+  top_p: 1.0
+
+data:
+  data_path: "swj0419/WikiMIA"
+  format: "huggingface"
+  text_column: "input"
+  label_column: "label"
+  text_length: 32
+  space_delimited_language: true
+
+methods:
+  - type: "loss"
+    params: {}
+  - type: "lower"
+    params: {}
+  - type: "zlib"
+    params: {}
+  - type: "mink"
+    params:
+      ratio: 0.2
+  - type: "camia"
+    params:
+      signal: "combined"
+      aggregation: "edgington"
+      diversity_calibration: true
+  - type: "camia"
+    params:
+      signal: "slope"
+      diversity_calibration: true
+  - type: "camia"
+    params:
+      signal: "cbpm"
+      diversity_calibration: true
+
+output_dir: "./results"
