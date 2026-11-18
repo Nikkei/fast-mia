@@ -11,6 +11,7 @@ from src.methods.pac import PACMethod
 from src.methods.recall import ReCaLLMethod
 from src.methods.ref import RefMethod
 from src.methods.samia import SaMIAMethod
+from src.methods.surp import SURPMethod
 from src.methods.zlib import ZlibMethod
 
 class TestMethodFactory:
@@ -27,6 +28,7 @@ class TestMethodFactory:
         ("ref", RefMethod, {"reference_model": {"model_id": "dummy"}}),
         ("neighbour", NeighbourMethod, {}),
         ("aeca", AECAMethod, {}),
+        ("surp", SURPMethod, {"ratio": 0.2}),
     ])
     def test_create_method(self, type_, cls, params):
         method = MethodFactory.create_method({"type": type_, "params": params})
