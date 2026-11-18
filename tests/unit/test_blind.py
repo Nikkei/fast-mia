@@ -53,7 +53,7 @@ class TestBlindScoring:
 
         assert len(scores) == len(texts)
         model.generate.assert_not_called()
-        auroc, _, _ = get_metrics(scores, labels)
+        auroc = get_metrics(scores, labels)[0]
         assert auroc > 0.9
 
     def test_surface_features_and_non_space_delimited_normalization(self):
