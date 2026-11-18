@@ -1,13 +1,13 @@
 # Running on Google Cloud
 
-Fast-MIA provides scripts to submit GPU evaluation jobs to Google Compute Engine (GCE). The workflow automates instance creation, environment setup, job execution, result upload to Google Cloud Storage (GCS), and instance stop/cleanup.
+Fast-MIA provides scripts to submit evaluation jobs to both **Google Compute Engine (NVIDIA GPUs)** and **Google Cloud TPU VMs (TPU v5e / v6e Trillium)**. Both workflows automate instance creation, environment setup, job execution, result upload to Google Cloud Storage (GCS), and instance stop/cleanup.
 
 ## Prerequisites
 
 Before using the GCP scripts, ensure you have:
 
 1. **gcloud CLI** installed and authenticated (`gcloud auth login`)
-2. **GPU quota** in the target zone (e.g., A100 80GB GPUs in `asia-southeast1-c`). You can check and request quota increases in the [Google Cloud Console](https://console.cloud.google.com/iam-admin/quotas).
+2. **GPU or Cloud TPU quota** in the target zone (e.g., A100 80GB GPUs in `asia-southeast1-c`, or TPU `v6e-1` / `v5litepod-4` in `us-central1-b`). You can check and request quota increases in the [Google Cloud Console](https://console.cloud.google.com/iam-admin/quotas).
 3. **A GCS bucket** for storing results:
     ```bash
     gsutil mb gs://your-bucket-name
@@ -129,6 +129,51 @@ For smaller models (e.g., Qwen2.5-0.5B), you can use the default A100 40GB:
   --bucket gs://my-bucket/fast-mia-results \
   --zone ZONE
 ```
+
+## Running on Google Cloud TPU
+
+Fast-MIA also supports single-host Cloud TPU VMs (such as **TPU v6e Trillium** and **TPU v5e**) through `gcp/submit_tpu_job.sh` and `config/tpu-sample.yaml`. Accelerator detection, memory cleanup (`BaseMethod.cleanup_model`), RNG seeding, and fixed-shape batched masked-LM inference in `neighbour` automatically adapt when `PJRT_DEVICE=TPU` / `torch_xla` is active.
+
+### TPU Quick Start
+
+```bash
+./gcp/submit_tpu_job.sh \
+  --config config/tpu-sample.yaml \
+  --bucket gs://your-bucket/fast-mia-results \
+  --zone us-central1-b \
+  --accelerator-type v6e-1 \
+  --extra-args "--detailed-report"
+```
+
+This workflow:
+
+1. Creates (or restarts) a Cloud TPU VM via `gcloud compute tpus tpu-vm`
+2. Transfers the repository and any referenced local dataset file
+3. Installs `uv`, project dependencies, and initializes `~/.cache/xla_compile_cache` via `gcp/setup_tpu_instance.sh`
+4. Runs `main.py` under `PJRT_DEVICE=TPU` with `--with 'vllm-tpu'`
+5. Uploads `results/` to GCS and stops (or deletes) the TPU VM
+
+### TPU CLI Options (`gcp/submit_tpu_job.sh`)
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--config` | (required) | Path to the YAML configuration file (e.g., `config/tpu-sample.yaml`) |
+| `--bucket` | (required) | GCS bucket URI for results (e.g., `gs://my-bucket/results`) |
+| `--project` | gcloud default | GCP project ID |
+| `--zone` | `us-central1-b` | Cloud TPU zone (e.g., `us-central1-b`, `us-east5-b`, `europe-west4-b`) |
+| `--accelerator-type` | `v6e-1` | Single-host TPU topology (`v6e-1`, `v6e-4`, `v6e-8`, `v5litepod-1`, `v5litepod-4`, `v5litepod-8`) |
+| `--runtime-version` | Auto-inferred | TPU VM software version (`v2-alpha-tpuv6e` for `v6e-*`, `v2-alpha-tpuv5-lite` for `v5litepod-*`) |
+| `--tpu-name` | `fast-mia-tpu-<timestamp>` | TPU VM name (pass an existing name to reuse caches) |
+| `--vllm-tpu-spec` | `vllm-tpu` | Package spec passed to `uv run --with` on the TPU VM |
+| `--spot` | off | Provision a Spot TPU VM for lower cost (pair with `--delete-after`) |
+| `--extra-args` | – | Additional CLI flags forwarded to `main.py` |
+| `--delete-after` | off | Delete the TPU VM after completion instead of stopping it |
+
+### Multi-Chip Tensor Parallelism & XLA Best Practices
+
+- **Use `bfloat16`**: Set `dtype: "bfloat16"` in the `model` block (native TPU MXU format; BitsAndBytes GPU quantization is not supported on TPU).
+- **Match `tensor_parallel_size` to chip count**: For `v6e-4` or `v5litepod-4`, set `tensor_parallel_size: 4` in your YAML `model` block; for `v6e-8` / `v5litepod-8`, set `tensor_parallel_size: 8`.
+- **Minimize XLA recompilation**: Keep `max_model_len` bounded (e.g., `512` or `1024`) and reuse TPU VMs (`--tpu-name`) so `XLA_PERSISTENT_CACHE_PATH` (`~/.cache/xla_compile_cache`) avoids recompiling XLA graphs across runs. When using `neighbour` on TPU, `NeighbourMethod` automatically pads tail minibatches to `batch_size` (`pad_to_batch_size: true`) so the auxiliary masked LM compiles only a single static batch shape.
 
 ## Retrieving Results
 

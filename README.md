@@ -165,15 +165,23 @@ Code or Codex), the `/add-mia-method` skill automates this from a paper URL:
 
 ## Running on Google Cloud
 
-You can submit GPU jobs to Google Compute Engine using the provided scripts. The workflow creates an A100 80GB GPU instance, runs the evaluation, uploads results to Google Cloud Storage, and stops the instance (preserving model caches for reuse).
+You can submit GPU jobs to Google Compute Engine or TPU jobs to Cloud TPU VMs using the provided scripts. Both workflows provision an accelerator instance, run the evaluation, upload results to Google Cloud Storage, and stop the instance (preserving model and compilation caches for reuse).
 
 ```bash
+# NVIDIA GPU (Compute Engine)
 ./gcp/submit_job.sh \
   --config config/llama30b-exp.yaml \
   --bucket gs://your-bucket/fast-mia-results \
   --zone ZONE \
   --machine-type a2-ultragpu-1g \
   --accelerator-type nvidia-a100-80gb
+
+# Google Cloud TPU (v5e / v6e Trillium)
+./gcp/submit_tpu_job.sh \
+  --config config/tpu-sample.yaml \
+  --bucket gs://your-bucket/fast-mia-results \
+  --zone us-central1-b \
+  --accelerator-type v6e-1
 ```
 
 Please visit our [Running on Google Cloud](https://nikkei.github.io/fast-mia/google-cloud/) documentation for more details.
