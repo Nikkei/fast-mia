@@ -68,10 +68,17 @@ def main() -> None:
     text_length = config.data.get("text_length", 32)
 
     # If using WikiMIA dataset
-    data_path = config.data.get("data_path")
+    data_config = config.data
+    data_path = data_config.get("data_path")
+    has_explicit_null_label = (
+        "label_column" in data_config and data_config["label_column"] is None
+    )
+
     if data_path == "swj0419/WikiMIA":
         logging.info(f"WikiMIA dataset will be used with text length {text_length}")
         data_loader = DataLoader.load_wikimia(text_length)
+        if has_explicit_null_label:
+            data_loader.label_column = None
     elif data_path is not None and data_path.startswith("iamgroot42/mimir"):
         logging.info(f"Mimir dataset will be used with text length {text_length}")
         if text_length != 200:
@@ -92,14 +99,18 @@ def main() -> None:
             data_path=data_path,
             token=token,
         )
+        if has_explicit_null_label:
+            data_loader.label_column = None
     else:
         # Initialize normal data loader
-        data_config = config.data
+        label_column = (
+            data_config["label_column"] if "label_column" in data_config else "label"
+        )
         data_loader = DataLoader(
-            data_path=data_config.get("data_path"),
+            data_path=data_path,
             data_format=data_config.get("format", "csv"),
             text_column=data_config.get("text_column", "text"),
-            label_column=data_config.get("label_column", "label"),
+            label_column=label_column,
         )
 
     # Initialize model loader
@@ -146,6 +157,7 @@ def main() -> None:
             cache_stats=eval_result.cache_stats,
             data_stats=eval_result.data_stats,
             end_time=end_time,
+            texts=eval_result.texts,
         )
 
         # Generate visualizations
@@ -156,11 +168,12 @@ def main() -> None:
         )
         saved_paths.update(figure_paths)
     else:
-        # Default mode: config.yaml, results.csv, report.txt
+        # Default mode: config.yaml, results.csv, report.txt (+ detailed_scores.csv in audit mode)
         saved_paths = result_writer.save_default(
             results_df=eval_result.results_df,
             results=eval_result.detailed_results,
             data_stats=eval_result.data_stats,
+            texts=eval_result.texts,
         )
 
     logging.info(f"\nAll outputs saved to: {run_dir}")

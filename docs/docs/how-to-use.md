@@ -114,11 +114,29 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 | `data_path` | ✅ | – | Path to a local file or one of the dedicated Hugging Face datasets (`swj0419/WikiMIA` or `iamgroot42/mimir_{domain}_{ngram}`). |
 | `format` | ❌ | `csv` | One of `csv`, `jsonl`, `json`, `parquet`. Use `huggingface` **only** in combination with `swj0419/WikiMIA` or `iamgroot42/mimir_{domain}_{ngram}`. |
 | `text_column` | ❌ | `text` | Column containing the raw text to probe. |
-| `label_column` | ❌ | `label` | Column containing membership labels (`1` = member, `0` = non-member). |
+| `label_column` | ❌ | `label` | Column containing membership labels (`1` = member, `0` = non-member). Set to `null` to run in **unlabeled audit mode** (outputs per-sample MIA scores without ground-truth labels). |
 | `text_length` | ❌ | `32` | Number of words kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
 | `space_delimited_language` | ❌ | `true` | Set to `false` for languages without whitespace like Japanese. |
 
 **Note**: If `space_delimited_language` is `false`, you must pre-process your text and insert spaces between words beforehand; Fast-MIA assumes the input is already space-separated and will simply strip the spaces back out during scoring.
+
+#### Unlabeled Audit Mode (`label_column: null`)
+
+When auditing an unlabeled corpus (e.g., checking suspect documents against a target LLM without ground-truth membership labels), set `label_column: null`:
+
+```yaml
+data:
+  data_path: "./data/suspect_corpus.jsonl"
+  format: "jsonl"
+  text_column: "text"
+  label_column: null
+  text_length: 128
+```
+
+In audit mode:
+- Methods that require ground-truth labels (such as `conrecall`) are rejected at startup with a descriptive `ValueError`.
+- `results.csv` reports score distribution statistics (`mean_score`, `std_score`, `min_score`, `median_score`, `max_score`).
+- Per-sample scores are automatically written to `detailed_scores.csv` even without `--detailed-report`.
 
 #### Supported File Formats
 

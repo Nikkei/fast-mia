@@ -94,6 +94,23 @@ class TestDataLoaderIntegration:
                 label_column="label",
             )
 
+    def test_unlabeled_audit_mode_csv_integration(self, tmp_path: Path):
+        """Integration test for unlabeled audit mode (label_column=None)"""
+        audit_csv = tmp_path / "suspect.csv"
+        pd.DataFrame(
+            {"text": ["Unlabeled sample one here", "Unlabeled sample two here"]}
+        ).to_csv(audit_csv, index=False)
+
+        loader = DataLoader(
+            data_path=audit_csv,
+            data_format="csv",
+            text_column="text",
+            label_column=None,
+        )
+        texts, labels = loader.get_data(text_length=3)
+        assert texts == ["Unlabeled sample one", "Unlabeled sample two"]
+        assert labels is None
+
     def test_text_length_splitting_integration(self, sample_csv_path):
         """Integration test for text splitting with specified text length"""
         # データローダーを作成

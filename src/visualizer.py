@@ -95,56 +95,79 @@ class Visualizer:
     def plot_score_distributions(
         self,
         results: list[dict[str, Any]],
-        labels: list[int],
+        labels: list[int] | None = None,
     ) -> Path:
         """Plot score distributions for each method
 
         Args:
             results: List of method results containing scores
-            labels: Ground truth labels
+            labels: Ground truth labels, or None in unlabeled audit mode
 
         Returns:
             Path to saved figure
         """
         n_methods = len(results)
-        n_cols = min(3, n_methods)
-        n_rows = (n_methods + n_cols - 1) // n_cols
+        n_cols = min(3, max(n_methods, 1))
+        n_rows = max(1, (n_methods + n_cols - 1) // n_cols)
 
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
-        if n_methods == 1:
+        if n_methods <= 1:
             axes = np.array([axes])
         axes = axes.flatten()
 
-        labels_arr = np.array(labels)
+        labels_arr = np.array(labels) if labels is not None else None
 
+        i = -1
         for i, result in enumerate(results):
             ax = axes[i]
             method_name = result["method_name"]
-            scores = np.array(result["scores"])
+            scores = np.array(result["scores"], dtype=float)
 
-            member_scores = scores[labels_arr == 1]
-            nonmember_scores = scores[labels_arr == 0]
+            if labels_arr is None:
+                ax.hist(
+                    scores[~np.isnan(scores)],
+                    bins=30,
+                    alpha=0.7,
+                    label="Audit samples",
+                    color="steelblue",
+                    density=True,
+                )
+                mean_val = (
+                    float(np.nanmean(scores)) if scores.size > 0 else float("nan")
+                )
+                if not np.isnan(mean_val):
+                    ax.axvline(
+                        mean_val,
+                        color="crimson",
+                        linestyle="--",
+                        lw=1.5,
+                        label=f"Mean={mean_val:.3f}",
+                    )
+                ax.set_title(f"{method_name}\nMean={mean_val:.3f}", fontsize=11)
+            else:
+                member_scores = scores[labels_arr == 1]
+                nonmember_scores = scores[labels_arr == 0]
 
-            ax.hist(
-                member_scores,
-                bins=30,
-                alpha=0.6,
-                label="Member",
-                color="steelblue",
-                density=True,
-            )
-            ax.hist(
-                nonmember_scores,
-                bins=30,
-                alpha=0.6,
-                label="Non-member",
-                color="coral",
-                density=True,
-            )
+                ax.hist(
+                    member_scores,
+                    bins=30,
+                    alpha=0.6,
+                    label="Member",
+                    color="steelblue",
+                    density=True,
+                )
+                ax.hist(
+                    nonmember_scores,
+                    bins=30,
+                    alpha=0.6,
+                    label="Non-member",
+                    color="coral",
+                    density=True,
+                )
+                ax.set_title(f"{method_name}\nAUROC={result['auroc']:.3f}", fontsize=11)
 
             ax.set_xlabel("Score", fontsize=10)
             ax.set_ylabel("Density", fontsize=10)
-            ax.set_title(f"{method_name}\nAUROC={result['auroc']:.3f}", fontsize=11)
             ax.legend(loc="upper right", fontsize=8)
             ax.grid(True, alpha=0.3)
 
@@ -225,21 +248,23 @@ class Visualizer:
     def generate_all_plots(
         self,
         results: list[dict[str, Any]],
-        labels: list[int],
+        labels: list[int] | None = None,
     ) -> dict[str, Path]:
         """Generate all visualization plots
 
         Args:
             results: List of method results
-            labels: Ground truth labels
+            labels: Ground truth labels, or None in unlabeled audit mode
 
         Returns:
             Dictionary mapping plot names to file paths
         """
-        paths = {}
+        paths: dict[str, Path] = {}
 
-        paths["roc_curves"] = self.plot_roc_curves(results, labels)
+        if labels is not None:
+            paths["roc_curves"] = self.plot_roc_curves(results, labels)
         paths["score_distributions"] = self.plot_score_distributions(results, labels)
-        paths["metrics_comparison"] = self.plot_metrics_comparison(results)
+        if labels is not None:
+            paths["metrics_comparison"] = self.plot_metrics_comparison(results)
 
         return paths
