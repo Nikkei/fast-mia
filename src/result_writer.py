@@ -82,6 +82,7 @@ class ResultWriter:
         end_time: datetime,
         cache_stats: dict[str, Any],
         data_stats: dict[str, Any],
+        dataset_inference_df: pd.DataFrame | None = None,
     ) -> dict[str, Any]:
         """Build metadata dictionary
 
@@ -89,6 +90,7 @@ class ResultWriter:
             end_time: Experiment end time
             cache_stats: Cache statistics from evaluator
             data_stats: Data statistics (num_samples, num_members, etc.)
+            dataset_inference_df: Optional two-sample statistical test results
 
         Returns:
             Metadata dictionary
@@ -96,7 +98,7 @@ class ResultWriter:
         duration = end_time - self.start_time
         git_info = _get_git_info()
 
-        metadata = {
+        metadata: dict[str, Any] = {
             "experiment": {
                 "start_time": self.start_time.isoformat(),
                 "end_time": end_time.isoformat(),
@@ -130,6 +132,11 @@ class ResultWriter:
         if self.config.lora:
             metadata["lora"] = self.config.lora
 
+        if dataset_inference_df is not None and not dataset_inference_df.empty:
+            metadata["dataset_inference"] = dataset_inference_df.to_dict(
+                orient="records"
+            )
+
         return metadata
 
     def save_metadata(
@@ -137,6 +144,7 @@ class ResultWriter:
         end_time: datetime,
         cache_stats: dict[str, Any],
         data_stats: dict[str, Any],
+        dataset_inference_df: pd.DataFrame | None = None,
     ) -> Path:
         """Save experiment metadata as JSON and YAML
 
@@ -144,11 +152,17 @@ class ResultWriter:
             end_time: Experiment end time
             cache_stats: Cache statistics
             data_stats: Data statistics
+            dataset_inference_df: Optional two-sample statistical test results
 
         Returns:
             Path to saved metadata file
         """
-        metadata = self._build_metadata(end_time, cache_stats, data_stats)
+        metadata = self._build_metadata(
+            end_time,
+            cache_stats,
+            data_stats,
+            dataset_inference_df=dataset_inference_df,
+        )
 
         json_path = self.run_dir / "metadata.json"
         with json_path.open("w") as f:
@@ -176,6 +190,36 @@ class ResultWriter:
         output_path = self.run_dir / "results.csv"
         results_df.to_csv(output_path, index=False)
         logging.info(f"Results saved to {output_path}")
+        return output_path
+
+    def save_dataset_inference_csv(
+        self,
+        dataset_inference_df: pd.DataFrame,
+    ) -> Path:
+        """Save Dataset Inference two-sample hypothesis test results as CSV."""
+        output_path = self.run_dir / "dataset_inference.csv"
+        dataset_inference_df.to_csv(output_path, index=False)
+        logging.info(f"Dataset inference results saved to {output_path}")
+        return output_path
+
+    def save_group_inference_csv(
+        self,
+        group_inference_df: pd.DataFrame,
+    ) -> Path:
+        """Save group-level Dataset Inference results as CSV."""
+        output_path = self.run_dir / "group_inference.csv"
+        group_inference_df.to_csv(output_path, index=False)
+        logging.info(f"Group dataset inference results saved to {output_path}")
+        return output_path
+
+    def save_chunk_scaling_csv(
+        self,
+        chunk_scaling_df: pd.DataFrame,
+    ) -> Path:
+        """Save chunk-scaling statistical results as CSV."""
+        output_path = self.run_dir / "chunk_scaling.csv"
+        chunk_scaling_df.to_csv(output_path, index=False)
+        logging.info(f"Chunk scaling results saved to {output_path}")
         return output_path
 
     def save_detailed_scores(
@@ -220,6 +264,8 @@ class ResultWriter:
         results_df: pd.DataFrame,
         results: list[dict[str, Any]],
         data_stats: dict[str, Any],
+        dataset_inference_df: pd.DataFrame | None = None,
+        group_inference_df: pd.DataFrame | None = None,
     ) -> Path:
         """Generate a human-readable summary report
 
@@ -227,6 +273,8 @@ class ResultWriter:
             results_df: DataFrame with evaluation results
             results: List of method results with detailed info
             data_stats: Data statistics
+            dataset_inference_df: Optional two-sample test results
+            group_inference_df: Optional group-level test results
 
         Returns:
             Path to saved report file
@@ -278,6 +326,62 @@ class ResultWriter:
                 "-" * 60,
                 "",
                 format_results_df(results_df).to_string(index=False),
+            ]
+        )
+
+        if dataset_inference_df is not None and not dataset_inference_df.empty:
+            display_cols = [
+                c
+                for c in (
+                    "method",
+                    "cohens_d",
+                    "welch_p_value",
+                    "mannwhitney_p_value",
+                    "permutation_p_value",
+                )
+                if c in dataset_inference_df.columns
+            ]
+            lines.extend(
+                [
+                    "",
+                    "-" * 60,
+                    "DATASET INFERENCE (TWO-SAMPLE STATISTICAL TESTS)",
+                    "-" * 60,
+                    "",
+                    dataset_inference_df[display_cols].to_string(
+                        index=False, float_format=lambda v: f"{v:.4g}"
+                    ),
+                ]
+            )
+
+        if group_inference_df is not None and not group_inference_df.empty:
+            group_cols = [
+                c
+                for c in (
+                    "method",
+                    "group",
+                    "comparison_mode",
+                    "cohens_d",
+                    "welch_p_value",
+                    "permutation_p_value",
+                )
+                if c in group_inference_df.columns
+            ]
+            lines.extend(
+                [
+                    "",
+                    "-" * 60,
+                    "GROUP-LEVEL DATASET INFERENCE",
+                    "-" * 60,
+                    "",
+                    group_inference_df[group_cols].to_string(
+                        index=False, float_format=lambda v: f"{v:.4g}"
+                    ),
+                ]
+            )
+
+        lines.extend(
+            [
                 "",
                 "-" * 60,
                 "BEST PERFORMERS",
@@ -340,6 +444,8 @@ class ResultWriter:
         results_df: pd.DataFrame,
         results: list[dict[str, Any]],
         data_stats: dict[str, Any],
+        dataset_inference_df: pd.DataFrame | None = None,
+        group_inference_df: pd.DataFrame | None = None,
     ) -> dict[str, Path]:
         """Save default outputs (config, results.csv, report.txt)
 
@@ -347,6 +453,8 @@ class ResultWriter:
             results_df: DataFrame with evaluation results
             results: List of method results with detailed info
             data_stats: Data statistics
+            dataset_inference_df: Optional two-sample test results
+            group_inference_df: Optional group-level test results
 
         Returns:
             Dictionary mapping output names to file paths
@@ -355,7 +463,19 @@ class ResultWriter:
 
         paths["config"] = self.copy_config()
         paths["results_csv"] = self.save_results_csv(results_df)
-        paths["report"] = self.generate_summary_report(results_df, results, data_stats)
+        if dataset_inference_df is not None and not dataset_inference_df.empty:
+            paths["dataset_inference"] = self.save_dataset_inference_csv(
+                dataset_inference_df
+            )
+        if group_inference_df is not None and not group_inference_df.empty:
+            paths["group_inference"] = self.save_group_inference_csv(group_inference_df)
+        paths["report"] = self.generate_summary_report(
+            results_df,
+            results,
+            data_stats,
+            dataset_inference_df=dataset_inference_df,
+            group_inference_df=group_inference_df,
+        )
 
         return paths
 
@@ -367,6 +487,9 @@ class ResultWriter:
         cache_stats: dict[str, Any],
         data_stats: dict[str, Any],
         end_time: datetime,
+        dataset_inference_df: pd.DataFrame | None = None,
+        group_inference_df: pd.DataFrame | None = None,
+        chunk_scaling_df: pd.DataFrame | None = None,
     ) -> dict[str, Path]:
         """Save all outputs
 
@@ -377,6 +500,9 @@ class ResultWriter:
             cache_stats: Cache statistics
             data_stats: Data statistics
             end_time: Experiment end time
+            dataset_inference_df: Optional two-sample test results
+            group_inference_df: Optional group-level test results
+            chunk_scaling_df: Optional chunk scaling results
 
         Returns:
             Dictionary mapping output names to file paths
@@ -386,7 +512,26 @@ class ResultWriter:
         paths["config"] = self.copy_config()
         paths["results_csv"] = self.save_results_csv(results_df)
         paths["detailed_scores"] = self.save_detailed_scores(results, labels)
-        paths["metadata"] = self.save_metadata(end_time, cache_stats, data_stats)
-        paths["report"] = self.generate_summary_report(results_df, results, data_stats)
+        if dataset_inference_df is not None and not dataset_inference_df.empty:
+            paths["dataset_inference"] = self.save_dataset_inference_csv(
+                dataset_inference_df
+            )
+        if group_inference_df is not None and not group_inference_df.empty:
+            paths["group_inference"] = self.save_group_inference_csv(group_inference_df)
+        if chunk_scaling_df is not None and not chunk_scaling_df.empty:
+            paths["chunk_scaling"] = self.save_chunk_scaling_csv(chunk_scaling_df)
+        paths["metadata"] = self.save_metadata(
+            end_time,
+            cache_stats,
+            data_stats,
+            dataset_inference_df=dataset_inference_df,
+        )
+        paths["report"] = self.generate_summary_report(
+            results_df,
+            results,
+            data_stats,
+            dataset_inference_df=dataset_inference_df,
+            group_inference_df=group_inference_df,
+        )
 
         return paths

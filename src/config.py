@@ -68,3 +68,8 @@ class Config:
         """Get sampling_parameters config"""
         sampling_parameters = (self.config.get("sampling_parameters") or {}).copy()
         return {**DEFAULT_SAMPLING_PARAMETERS, **sampling_parameters}
+
+    @property
+    def dataset_inference(self) -> dict[str, Any]:
+        """Get dataset_inference config"""
+        return self.config.get("dataset_inference") or {}

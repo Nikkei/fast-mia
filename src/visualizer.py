@@ -24,6 +24,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from sklearn.metrics import roc_curve
 
 
@@ -222,16 +223,109 @@ class Visualizer:
         logging.info(f"Metrics comparison saved to {output_path}")
         return output_path
 
+    def plot_chunk_scaling(
+        self,
+        chunk_scaling_df: pd.DataFrame,
+        alpha: float = 0.05,
+    ) -> Path:
+        """Plot statistical significance and detection power vs number of chunks.
+
+        Args:
+            chunk_scaling_df: DataFrame returned by ``compute_chunk_scaling``
+            alpha: Significance level for threshold reference line
+
+        Returns:
+            Path to saved figure
+        """
+        fig, (ax_sig, ax_pow) = plt.subplots(1, 2, figsize=(13, 5.5))
+
+        methods = list(dict.fromkeys(chunk_scaling_df["method"].tolist()))
+        colors = plt.cm.tab10(np.linspace(0, 1, max(len(methods), 1)))
+
+        for idx, method_name in enumerate(methods):
+            sub = chunk_scaling_df[
+                chunk_scaling_df["method"] == method_name
+            ].sort_values("chunk_size")
+            x_vals = sub["chunk_size"].to_numpy(dtype=float)
+            mean_logp = sub["mean_neg_log10_p"].to_numpy(dtype=float)
+            q25_logp = sub["q25_neg_log10_p"].to_numpy(dtype=float)
+            q75_logp = sub["q75_neg_log10_p"].to_numpy(dtype=float)
+            power = sub["power_at_alpha"].to_numpy(dtype=float)
+
+            ax_sig.plot(
+                x_vals,
+                mean_logp,
+                marker="o",
+                lw=2,
+                color=colors[idx],
+                label=method_name,
+            )
+            ax_sig.fill_between(
+                x_vals, q25_logp, q75_logp, color=colors[idx], alpha=0.18
+            )
+
+            ax_pow.plot(
+                x_vals,
+                power,
+                marker="s",
+                lw=2,
+                color=colors[idx],
+                label=method_name,
+            )
+
+        sig_line = -np.log10(max(alpha, 1e-12))
+        ax_sig.axhline(
+            sig_line,
+            color="crimson",
+            linestyle="--",
+            lw=1.2,
+            label=f"p = {alpha:g}",
+        )
+        ax_sig.set_xscale("log")
+        ax_sig.set_xlabel("Number of Chunks (m)", fontsize=11)
+        ax_sig.set_ylabel("-log10(p-value)", fontsize=11)
+        ax_sig.set_title("Significance Scaling vs Chunk Count", fontsize=12)
+        ax_sig.legend(loc="upper left", fontsize=8)
+        ax_sig.grid(True, which="both", alpha=0.3)
+
+        ax_pow.axhline(
+            0.80,
+            color="dimgray",
+            linestyle=":",
+            lw=1.2,
+            label="80% Power",
+        )
+        ax_pow.set_xscale("log")
+        ax_pow.set_ylim([0.0, 1.05])
+        ax_pow.set_xlabel("Number of Chunks (m)", fontsize=11)
+        ax_pow.set_ylabel(f"Detection Power (p < {alpha:g})", fontsize=11)
+        ax_pow.set_title("Empirical Power vs Chunk Count", fontsize=12)
+        ax_pow.legend(loc="lower right", fontsize=8)
+        ax_pow.grid(True, which="both", alpha=0.3)
+
+        fig.tight_layout()
+
+        output_path = self.figures_dir / "chunk_scaling.png"
+        fig.savefig(output_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+
+        logging.info(f"Chunk scaling plot saved to {output_path}")
+        return output_path
+
     def generate_all_plots(
         self,
         results: list[dict[str, Any]],
         labels: list[int],
+        chunk_scaling_df: pd.DataFrame | None = None,
+        alpha: float = 0.05,
     ) -> dict[str, Path]:
         """Generate all visualization plots
 
         Args:
             results: List of method results
             labels: Ground truth labels
+            chunk_scaling_df: Optional chunk scaling DataFrame
+            alpha: Significance threshold for chunk scaling plot
 
         Returns:
             Dictionary mapping plot names to file paths
@@ -241,5 +335,9 @@ class Visualizer:
         paths["roc_curves"] = self.plot_roc_curves(results, labels)
         paths["score_distributions"] = self.plot_score_distributions(results, labels)
         paths["metrics_comparison"] = self.plot_metrics_comparison(results)
+        if chunk_scaling_df is not None and not chunk_scaling_df.empty:
+            paths["chunk_scaling"] = self.plot_chunk_scaling(
+                chunk_scaling_df, alpha=alpha
+            )
 
         return paths
