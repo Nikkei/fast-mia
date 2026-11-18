@@ -14,6 +14,7 @@
 
 from .aeca import AECAMethod
 from .base import BaseMethod
+from .blind import BlindMethod
 from .camia import CAMIAMethod
 from .conrecall import CONReCaLLMethod
 from .dcpdd import DCPDDMethod
@@ -21,11 +22,13 @@ from .factory import MethodFactory
 from .loss import LossMethod
 from .lower import LowerMethod
 from .mink import MinKMethod
+from .minkpp import MinKPPMethod
 from .neighbour import NeighbourMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
 from .ref import RefMethod
 from .samia import SaMIAMethod
+from .surp import SURPMethod
 from .zlib import ZlibMethod
 
 __all__ = [
@@ -44,4 +47,7 @@ __all__ = [
     "NeighbourMethod",
     "AECAMethod",
     "CAMIAMethod",
+    "SURPMethod",
+    "MinKPPMethod",
+    "BlindMethod",
 ]
