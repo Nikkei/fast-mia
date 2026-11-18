@@ -144,11 +144,40 @@ class TestDataLoader:
         with pytest.raises(FileNotFoundError):
             DataLoader(data_path="nonexistent_file.csv", data_format="csv")
 
-    def test_load_huggingface_not_supported(self):
-        """Test that generic Hugging Face datasets are rejected"""
-        with pytest.raises(ValueError, match="Generic Hugging Face datasets are not supported"):
+    @mock.patch("src.data_loader.load_dataset")
+    def test_load_generic_huggingface_dataset(self, mock_load_dataset):
+        """Test loading an arbitrary Hugging Face dataset with config name and split"""
+        mock_dataset = mock.MagicMock()
+        mock_dataset.to_pandas.return_value = pd.DataFrame(
+            {"content": ["HF text one", "HF text two"], "is_member": [1, 0]}
+        )
+        mock_load_dataset.return_value = mock_dataset
+
+        loader = DataLoader(
+            data_path="org/custom-mia-dataset",
+            data_format="huggingface",
+            text_column="content",
+            label_column="is_member",
+            dataset_config_name="subset_a",
+            split="validation",
+            token="hf_secret",
+        )
+
+        mock_load_dataset.assert_called_once_with(
+            "org/custom-mia-dataset",
+            "subset_a",
+            split="validation",
+            token="hf_secret",
+        )
+        texts, labels = loader.get_data()
+        assert texts == ["HF text one", "HF text two"]
+        assert labels == [1, 0]
+
+    def test_load_generic_huggingface_rejects_whitespace_dataset_name(self):
+        """Test that whitespace-only Hugging Face dataset IDs are rejected"""
+        with pytest.raises(ValueError, match="non-empty Hugging Face dataset ID"):
             DataLoader(
-                data_path="dummy/dataset",
+                data_path="   ",
                 data_format="huggingface",
                 text_column="text",
                 label_column="label",

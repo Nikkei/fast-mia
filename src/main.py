@@ -93,13 +93,16 @@ def main() -> None:
             token=token,
         )
     else:
-        # Initialize normal data loader
+        # Initialize general data loader (local files or generic Hugging Face datasets)
         data_config = config.data
         data_loader = DataLoader(
             data_path=data_config.get("data_path"),
             data_format=data_config.get("format", "csv"),
             text_column=data_config.get("text_column", "text"),
             label_column=data_config.get("label_column", "label"),
+            dataset_config_name=data_config.get("dataset_config_name"),
+            split=data_config.get("split", "train"),
+            token=os.environ.get("HUGGINGFACE_TOKEN"),
         )
 
     # Initialize model loader

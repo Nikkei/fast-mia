@@ -117,6 +117,8 @@ class ResultWriter:
             "data": {
                 "data_path": self.config.data.get("data_path"),
                 "format": self.config.data.get("format", "csv"),
+                "dataset_config_name": self.config.data.get("dataset_config_name"),
+                "split": self.config.data.get("split", "train"),
                 "text_length": self.config.data.get("text_length"),
                 "text_column": self.config.data.get("text_column", "text"),
                 "label_column": self.config.data.get("label_column", "label"),
