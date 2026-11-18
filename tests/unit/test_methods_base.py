@@ -155,6 +155,25 @@ class TestModelCacheBehavior:
 class TestCleanupModel:
     def test_deletes_model_and_frees_memory(self):
         # torch and vllm are mocked in conftest; assert the teardown runs cleanly.
-        with mock.patch("src.methods.base.destroy_model_parallel") as destroy:
+        with (
+            mock.patch("src.methods.base.destroy_model_parallel") as destroy,
+            mock.patch(
+                "src.methods.base.synchronize_and_empty_cache", return_value="tpu"
+            ) as sync_cache,
+        ):
             LossMethod.cleanup_model(mock.MagicMock())
         destroy.assert_called_once()
+        sync_cache.assert_called_once()
+
+    def test_cleanup_model_tolerates_destroy_parallel_exception(self):
+        with (
+            mock.patch(
+                "src.methods.base.destroy_model_parallel",
+                side_effect=RuntimeError("no parallel group"),
+            ),
+            mock.patch(
+                "src.methods.base.synchronize_and_empty_cache", return_value="cpu"
+            ) as sync_cache,
+        ):
+            LossMethod.cleanup_model(mock.MagicMock())
+        sync_cache.assert_called_once()

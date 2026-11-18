@@ -25,6 +25,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
+from .accelerator import get_accelerator_type
 from .config import Config
 from .utils import format_results_df
 
@@ -107,6 +108,7 @@ class ResultWriter:
                 "python_version": sys.version,
                 "platform": platform.platform(),
                 "hostname": platform.node(),
+                "accelerator": get_accelerator_type(),
             },
             "git": git_info,
             "model": {

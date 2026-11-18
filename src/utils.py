@@ -16,9 +16,10 @@ import random
 
 import numpy as np
 import pandas as pd
-import torch
 from sklearn.metrics import auc, roc_curve
 from transformers import set_seed
+
+from .accelerator import seed_accelerator
 
 METRIC_COLUMNS = ("auroc", "fpr95", "tpr05")
 
@@ -42,12 +43,12 @@ def format_results_df(results_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def fix_seed(seed: int = 0) -> None:
-    """Fix random seed
+    """Fix random seed across Python, NumPy, Transformers, and active accelerator
 
     Args:
         seed: Seed value to fix
     """
-    torch.manual_seed(seed)
+    seed_accelerator(seed)
     np.random.seed(seed)
     random.seed(seed)
     set_seed(seed)

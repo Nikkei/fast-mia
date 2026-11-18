@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gc
 import logging
 from heapq import nlargest
 from typing import TYPE_CHECKING, Any
@@ -24,6 +23,7 @@ from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 from vllm.outputs import RequestOutput
 
+from ..accelerator import get_torch_device, synchronize_and_empty_cache
 from .base import BaseMethod
 
 if TYPE_CHECKING:
@@ -190,8 +190,10 @@ class NeighbourMethod(BaseMethod):
         """
         from transformers import AutoModelForMaskedLM, AutoTokenizer
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logging.info(f"Loading search model for Neighbour: {self.search_model_id}")
+        device = get_torch_device()
+        logging.info(
+            f"Loading search model for Neighbour: {self.search_model_id} on {device}"
+        )
         search_tokenizer = AutoTokenizer.from_pretrained(self.search_model_id)
         search_model = AutoModelForMaskedLM.from_pretrained(self.search_model_id)
         search_model = search_model.to(device).eval()
@@ -212,9 +214,7 @@ class NeighbourMethod(BaseMethod):
 
         # Release the search model before invoking the vLLM target model.
         del search_model
-        gc.collect()
-        if device.type == "cuda":
-            torch.cuda.empty_cache()
+        synchronize_and_empty_cache()
 
         # Mean log-likelihood of the original texts under the target model.
         orig_outputs = self.get_outputs(
