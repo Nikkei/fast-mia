@@ -44,15 +44,35 @@ class NeighbourMethod(BaseMethod):
 
         Args:
             method_config: Method configuration
+                - search_model_id: Hugging Face masked LM ID
+                - num_neighbours: Maximum neighbours generated per text
+                - dropout: Embedding dropout rate applied to target position
+                - top_k: Top replacement candidates inspected per position
+                - max_length: Maximum token length for masked LM
+                - batch_size: Number of masked positions evaluated per forward
+                  pass (default 32)
+                - pad_to_batch_size: Pad final minibatch to ``batch_size`` so
+                  XLA/TPU avoids tail-shape graph recompilation (default None,
+                  which enables padding automatically on XLA devices)
+
+        Raises:
+            ValueError: If ``batch_size`` is less than 1
         """
         super().__init__("neighbour", method_config)
         self.search_model_id = self.method_config.get(
             "search_model_id", "bert-base-uncased"
         )
-        self.num_neighbours = self.method_config.get("num_neighbours", 100)
-        self.dropout = self.method_config.get("dropout", 0.7)
-        self.top_k = self.method_config.get("top_k", 10)
-        self.max_length = self.method_config.get("max_length", 512)
+        self.num_neighbours = int(self.method_config.get("num_neighbours", 100))
+        self.dropout = float(self.method_config.get("dropout", 0.7))
+        self.top_k = int(self.method_config.get("top_k", 10))
+        self.max_length = int(self.method_config.get("max_length", 512))
+        self.batch_size = int(self.method_config.get("batch_size", 32))
+        if self.batch_size < 1:
+            raise ValueError("NeighbourMethod requires 'batch_size' >= 1.")
+        raw_pad = self.method_config.get("pad_to_batch_size")
+        self.pad_to_batch_size: bool | None = (
+            bool(raw_pad) if raw_pad is not None else None
+        )
 
     def process_output(self, output: RequestOutput) -> float:
         """Process model output and calculate mean log-likelihood
@@ -85,6 +105,12 @@ class NeighbourMethod(BaseMethod):
             )
         return embeddings
 
+    def _should_pad_batch(self, device: torch.device) -> bool:
+        """Determine whether tail minibatches should be padded to batch_size."""
+        if self.pad_to_batch_size is not None:
+            return self.pad_to_batch_size
+        return getattr(device, "type", "") == "xla"
+
     def _generate_neighbours(
         self,
         text: str,
@@ -92,13 +118,13 @@ class NeighbourMethod(BaseMethod):
         search_tokenizer: "PreTrainedTokenizerBase",
         device: torch.device,
     ) -> tuple[str, list[str]]:
-        """Generate single-word-replacement neighbours for a text.
+        """Generate single-word-replacement neighbours for a text using batched MLM.
 
-        Faithful port of attack.py's ``generate_neighbours_alt`` (the variant
-        actually used in the reference main loop): replacement candidates are
-        scored per ``(position, candidate-token)`` rather than per decoded
-        text, the top ``num_neighbours`` swaps are kept, and each is then
-        materialised into a one-token-replacement neighbour.
+        Faithful port of attack.py's ``generate_neighbours_alt`` with batched
+        masked-position evaluation: instead of issuing ``seq_len - 1`` separate
+        batch-size-1 forward passes, masked positions are evaluated in
+        minibatches of ``self.batch_size`` (optionally padded to fixed shape on
+        XLA/TPU to prevent tail graph recompilation).
 
         Args:
             text: Original text
@@ -121,51 +147,88 @@ class NeighbourMethod(BaseMethod):
             return_tensors="pt",
         ).input_ids.to(device)
 
+        orig_dec = search_tokenizer.batch_decode(ids, skip_special_tokens=True)[0]
+        seq_len = int(ids.shape[1])
+        if seq_len <= 1:
+            return orig_dec, []
+
         base_embeds = embeddings(ids)
         # (position, candidate_token_id) -> replacement score
         replacements: dict[tuple[int, int], float] = {}
 
-        # Skip the leading special token (e.g. [CLS]).
-        for i in range(1, ids.shape[1]):
-            target_token = ids[0, i]
-            embeds = torch.cat(
-                (
-                    base_embeds[:, :i, :],
-                    token_dropout(base_embeds[:, i, :]).unsqueeze(dim=1),
-                    base_embeds[:, i + 1 :, :],
-                ),
-                dim=1,
-            )
-            token_probs = torch.softmax(
-                search_model(inputs_embeds=embeds).logits, dim=2
-            )
-            original_prob = token_probs[0, i, target_token]
-            top_probs, top_cands = torch.topk(token_probs[0, i, :], self.top_k)
+        # Skip the leading special token (e.g. [CLS]) and batch positions.
+        positions = list(range(1, seq_len))
+        pad_batch = self._should_pad_batch(device)
 
-            for cand, prob in zip(top_cands, top_probs, strict=True):
-                if cand == target_token:
-                    continue
+        for start in range(0, len(positions), self.batch_size):
+            chunk_positions = positions[start : start + self.batch_size]
+            chunk_len = len(chunk_positions)
+            batch_rows = (
+                self.batch_size
+                if (pad_batch and chunk_len < self.batch_size)
+                else chunk_len
+            )
+
+            batch_embeds = base_embeds.repeat(batch_rows, 1, 1)
+            for row_idx, pos in enumerate(chunk_positions):
+                batch_embeds[row_idx, pos, :] = token_dropout(base_embeds[0, pos, :])
+
+            logits = search_model(inputs_embeds=batch_embeds).logits
+            pos_logits = torch.stack(
+                [
+                    logits[row_idx, pos, :]
+                    for row_idx, pos in enumerate(chunk_positions)
+                ],
+                dim=0,
+            )
+            pos_probs = torch.softmax(pos_logits, dim=-1)
+            effective_k = min(self.top_k, int(pos_probs.shape[-1]))
+            top_probs_batch, top_cands_batch = torch.topk(
+                pos_probs, effective_k, dim=-1
+            )
+
+            target_tokens = [int(ids[0, pos].item()) for pos in chunk_positions]
+            orig_probs = [
+                float(pos_probs[row_idx, tok].item())
+                for row_idx, tok in enumerate(target_tokens)
+            ]
+            top_probs_list = top_probs_batch.detach().cpu().tolist()
+            top_cands_list = top_cands_batch.detach().cpu().tolist()
+
+            for pos, target_tok, orig_prob, row_cands, row_probs in zip(
+                chunk_positions,
+                target_tokens,
+                orig_probs,
+                top_cands_list,
+                top_probs_list,
+                strict=True,
+            ):
                 # Faithful to attack.py: a degenerate original_prob == 1 is
                 # floored to 0.1 to avoid a division by zero.
-                if original_prob.item() == 1:
-                    score = prob.item() / (1 - 0.9)
-                else:
-                    score = prob.item() / (1 - original_prob.item())
-                replacements[(i, int(cand))] = score
+                denom = 1.0 - 0.9 if orig_prob == 1.0 else 1.0 - orig_prob
+                for cand, prob in zip(row_cands, row_probs, strict=True):
+                    cand_id = int(cand)
+                    if cand_id == target_tok:
+                        continue
+                    replacements[(pos, cand_id)] = float(prob) / denom
 
-        # Keep the highest-scored swaps and build one neighbour per swap.
+        # Keep the highest-scored swaps and decode all neighbours in one call.
         top_keys = nlargest(self.num_neighbours, replacements, key=replacements.get)
-        neighbours = []
-        for i, cand in top_keys:
-            alt_ids = torch.cat(
-                (ids[:, :i], ids.new_tensor([[cand]]), ids[:, i + 1 :]), dim=1
-            )
-            alt_text = search_tokenizer.batch_decode(alt_ids, skip_special_tokens=True)[
-                0
+        if top_keys:
+            alt_rows = [
+                torch.cat(
+                    (ids[:, :i], ids.new_tensor([[cand]]), ids[:, i + 1 :]), dim=1
+                )
+                for i, cand in top_keys
             ]
-            neighbours.append(alt_text)
+            neighbours = list(
+                search_tokenizer.batch_decode(
+                    torch.cat(alt_rows, dim=0), skip_special_tokens=True
+                )
+            )
+        else:
+            neighbours = []
 
-        orig_dec = search_tokenizer.batch_decode(ids, skip_special_tokens=True)[0]
         return orig_dec, neighbours
 
     def run(
