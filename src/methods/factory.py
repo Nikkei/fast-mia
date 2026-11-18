@@ -21,6 +21,7 @@ from .dcpdd import DCPDDMethod
 from .loss import LossMethod
 from .lower import LowerMethod
 from .mink import MinKMethod
+from .minkpp import MinKPPMethod
 from .neighbour import NeighbourMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
@@ -33,6 +34,7 @@ METHOD_BUILDERS = {
     "lower": LowerMethod,
     "zlib": ZlibMethod,
     "mink": MinKMethod,
+    "minkpp": MinKPPMethod,
     "pac": PACMethod,
     "recall": ReCaLLMethod,
     "conrecall": CONReCaLLMethod,

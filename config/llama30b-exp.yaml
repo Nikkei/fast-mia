@@ -53,6 +53,10 @@ methods:
   - type: "mink"
     params:
       ratio: 1.0
+  - type: "minkpp"
+    params:
+      ratio: 0.2
+      top_k: 20
   - type: "recall"
     params:
       num_shots: 3
