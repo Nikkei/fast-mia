@@ -121,7 +121,43 @@ Please visit our [How to Use](https://nikkei.github.io/fast-mia/how-to-use/) to 
 
 ## Performance Comparison
 
-Below is a performance comparison of Fast-MIA (left) and Transformers-based implementations (right) in terms of AUC, inference time, FPR@95, and TPR@5 for running membership inference evaluation. Performance metrics such as AUC remain almost the same, while inference time is approximately 5 times faster.
+Below is a unified benchmark of all Fast-MIA methods on `EleutherAI/pythia-2.8b` (`swj0419/WikiMIA`, `text_length=32`, `--seed 42`) running on a single NVIDIA L4 (24GB). Methods that share `prompt_logprobs` outputs reuse the cached vLLM pass from `loss`.
+
+| Type | Method | AUROC | FPR@95 | TPR@5 | Time |
+|:-----|:-------|------:|-------:|------:|-----:|
+| Baseline | LOSS (`loss`) | 0.6135 | 0.8972 | 0.1447 | 8.8s |
+| | Lowercase (`lower`) | 0.6093 | 0.9152 | 0.1111 | 8.6s |
+| | PPL/zlib (`zlib`) | 0.6213 | 0.8895 | 0.1602 | 0.04s (cached) |
+| | Ref (`ref`, `pythia-70m`) | 0.6100 | 0.8432 | 0.0594 | 90.7s |
+| Token distribution | Min-K% Prob (K=0.1) | 0.5955 | 0.9203 | 0.1421 | 0.03s (cached) |
+| | Min-K% Prob (K=0.2) | 0.6167 | 0.9177 | 0.1654 | 0.03s (cached) |
+| | Min-K% Prob (K=0.3) | 0.6168 | 0.8972 | 0.1654 | 0.03s (cached) |
+| | Min-K% Prob (K=0.5) | 0.6163 | 0.9049 | 0.1525 | 0.03s (cached) |
+| | Min-K% Prob (K=0.8) | 0.6135 | 0.9023 | 0.1447 | 0.03s (cached) |
+| | Min-K% Prob (K=1.0) | 0.6135 | 0.8972 | 0.1447 | 0.03s (cached) |
+| | DC-PDD (`dcpdd`) | 0.5928 | 0.9152 | 0.0956 | 39m18s (builds C4 cache) |
+| | AECA (`aeca`) | 0.6105 | 0.9306 | 0.1654 | 0.07s (cached) |
+| | CAMIA (`camia`) | 0.5873 | 0.9177 | 0.0724 | 0.09s (cached) |
+| | SURP (`surp`, ratio=0.2, p50) | 0.5655 | 0.9486 | 0.0930 | 0.72s (cached) |
+| | Min-K%++ (`minkpp`, ratio=0.2) | 0.6552 | 0.8612 | 0.1731 | 0.98s (cached) |
+| Text alternation | Neighbour (`neighbour`) | 0.5109 | 0.9563 | 0.0517 | 13m09s |
+| | PAC (`pac`) | 0.6569 | 0.8843 | 0.1628 | 38.9s |
+| | ReCaLL (`recall`) | 0.6923 | 0.8740 | 0.2016 | 28.7s |
+| | Con-ReCall (`conrecall`) | 0.7479 | 0.7378 | 0.2739 | 54.6s |
+| Black-box | SaMIA (`samia`) | 0.5371 | 0.9640 | 0.0801 | 41m00s |
+| Model-free | Blind MIA (`blind`, `tfidf`) | 0.9891 | 0.0514 | 0.9432 | 1.8s |
+
+### Experimental Setup
+
+- Hardware: NVIDIA L4 (24GB, GCE `g2-standard-8`)
+- Model: `EleutherAI/pythia-2.8b` (with `EleutherAI/pythia-70m` as reference model for `ref`)
+- Dataset: `swj0419/WikiMIA` (`text_length: 32`)
+- Configuration: `config/pythia28b-exp.yaml` (`--seed 42`)
+
+<details>
+<summary>Historical Reference: LLaMA 30B (16-bit) on NVIDIA A100 80GB (Fast-MIA vs Transformers)</summary>
+
+Below is the original performance comparison of Fast-MIA (left) and Transformers-based implementations (right) on `huggyllama/llama-30b` (16-bit), `swj0419/WikiMIA` (`text_length=32`), and NVIDIA A100 80GB (`config/llama30b-exp.yaml`).
 
 | Type             | Method                  | AUC        | Inference time (ratio)       | FPR@95       | TPR@5       |
 |------------------|-------------------------|------------|------------------------------|--------------|-------------|
@@ -143,12 +179,7 @@ Below is a performance comparison of Fast-MIA (left) and Transformers-based impl
 |                  | Con-ReCall          | 94.8 / 96.1 | 1m51s / 3m30s (×1.89)        | 15.9 / 12.9  | 66.7 / 73.6 |
 | black-box        | SaMIA               | 66.7 / 64.5 | 2h18m56s / 40h9m53s (×17.3)   | 90.5 / 90.7  | 15.2 / 15.5 |
 
-### Experimental Setup
-
-- Hardware: NVIDIA A100 80GB
-- Model: LLaMA 30B (16-bit)
-- Dataset: WikiMIA (length: 32)
-- Configuration: The Fast-MIA experimental results were obtained using `config/llama30b-exp.yaml`.
+</details>
 
 ## How to Add Methods
 
