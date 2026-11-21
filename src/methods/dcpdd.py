@@ -54,34 +54,42 @@ class DCPDDMethod(BaseMethod):
         return freq_dist_cache_path(model_id, self.file_num, self.max_token_length)
 
     def process_output(
-        self, output: RequestOutput, input_ids: list[int], freq_dist: list[int]
+        self, output: RequestOutput, freq_dist: list[int] | np.ndarray
     ) -> float:
         """Process model output and calculate DC-PDD score
 
         Args:
             output: Model output
+            freq_dist: Token frequency distribution over reference corpus
 
         Returns:
             DC-PDD score
         """
-        token_log_probs = self._extract_token_log_probs(output)
+        token_log_probs = np.asarray(
+            self._extract_token_log_probs(output), dtype=np.float64
+        )
+        if token_log_probs.size == 0:
+            return 0.0
 
-        # tokens with first occurance in text
-        indexes = []
-        current_ids = []
-        for i, input_id in enumerate(input_ids):
-            if input_id not in current_ids:
-                indexes.append(i)
-                current_ids.append(input_id)
+        # ``_extract_token_log_probs`` drops the leading position, whose prompt
+        # logprob is None, so align the token IDs to the tail of the prompt.
+        token_ids = np.asarray(output.prompt_token_ids[-token_log_probs.size :])
 
-        x_prob = np.exp(token_log_probs)[indexes]
-        x_freq = np.array(freq_dist)[np.array(input_ids)[indexes]]
+        # Keep the first occurrence of each token in the prompt tail.
+        _, indexes = np.unique(token_ids, return_index=True)
+        indexes.sort()
+
+        unique_token_ids = token_ids[indexes]
+        freq_array = np.asarray(freq_dist, dtype=np.float64)
+        x_freq = np.zeros(unique_token_ids.shape, dtype=np.float64)
+        in_range = (unique_token_ids >= 0) & (unique_token_ids < freq_array.size)
+        x_freq[in_range] = freq_array[unique_token_ids[in_range]]
+
+        x_prob = np.exp(token_log_probs[indexes])
         eps = 1e-10
-        ce = x_prob * np.log(1 / (x_freq + eps))
+        ce = x_prob * np.log(1.0 / (x_freq + eps))
         ce[ce > self.alpha] = self.alpha
-        dcpdd_score = -np.mean(ce)
-
-        return dcpdd_score
+        return float(-np.mean(ce))
 
     def run(
         self,
@@ -95,7 +103,6 @@ class DCPDDMethod(BaseMethod):
         """DC-PDD algorithm to calculate scores for a list of texts
         Args:
             texts: List of texts
-            labels: List of labels
             model: LLM model
             tokenizer: Tokenizer
             sampling_params: Sampling parameters
@@ -113,20 +120,10 @@ class DCPDDMethod(BaseMethod):
             self.max_token_length,
         )
 
-        # Apply the same normalization as get_outputs so that the token IDs
-        # encoded below stay aligned with the logprobs of the inference input
-        if data_config and not data_config.get("space_delimited_language", True):
-            texts = [text.replace(" ", "") for text in texts]
-
         # Get model outputs
         outputs = self.get_outputs(
             texts, model, sampling_params, lora_request, data_config
         )
 
         # Calculate scores from outputs
-        scores = [
-            self.process_output(output, tokenizer.encode(text)[1:], freq_dist)
-            for output, text in zip(outputs, texts, strict=True)
-        ]
-
-        return scores
+        return [self.process_output(output, freq_dist) for output in outputs]

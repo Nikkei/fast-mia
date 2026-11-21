@@ -22,7 +22,15 @@ from vllm.outputs import RequestOutput
 from vllm.tokenizers import TokenizerLike
 
 from .base import BaseMethod
-from .prefix_utils import compute_prefix_loss, extract_prefix, process_prefix
+from .prefix_utils import (
+    build_conditional_texts,
+    compute_conditional_prefix_length,
+    compute_prefix_loss,
+    get_bos_token_id,
+    get_separator_token,
+    process_prefix,
+    select_prefix_candidates,
+)
 
 
 class ReCaLLMethod(BaseMethod):
@@ -77,16 +85,25 @@ class ReCaLLMethod(BaseMethod):
         Returns:
             List of ReCaLL scores
         """
+        if not texts:
+            return []
+
+        strip_spaces = bool(
+            data_config and not data_config.get("space_delimited_language", True)
+        )
+        if strip_spaces:
+            texts = [text.replace(" ", "") for text in texts]
+
         # Get texts with label 0
         nonmembership_texts = [
             text for text, label in zip(texts, labels, strict=True) if label == 0
         ]
-        # Randomly select num_shots texts
-        nonmember_prefix = extract_prefix(nonmembership_texts, self.num_shots)
-
-        if data_config and not data_config.get("space_delimited_language", True):
-            texts = [text.replace(" ", "") for text in texts]
-            nonmember_prefix = [prefix.replace(" ", "") for prefix in nonmember_prefix]
+        nonmember_prefix = select_prefix_candidates(nonmembership_texts, self.num_shots)
+        requested_shots = (
+            len(nonmember_prefix)
+            if len(set(nonmembership_texts)) > 1
+            else self.num_shots
+        )
 
         avg_length = int(np.mean([len(tokenizer.encode(text)) for text in texts]))
         processed_nonmember_prefix, processed_num_shots = process_prefix(
@@ -95,8 +112,12 @@ class ReCaLLMethod(BaseMethod):
             nonmember_prefix,
             avg_length,
             self.pass_window,
-            self.num_shots,
+            requested_shots,
         )
+        if strip_spaces:
+            processed_nonmember_prefix = [
+                prefix.replace(" ", "") for prefix in processed_nonmember_prefix
+            ]
 
         if processed_num_shots != self.num_shots:
             logging.warning(
@@ -108,19 +129,31 @@ class ReCaLLMethod(BaseMethod):
         )
         losses = [self.process_output(output, 0) for output in outputs]
 
-        prefix = "".join(processed_nonmember_prefix)
-        # prefix [bos] text
-        # If tokenizer.bos_token is None, use ''
-        sep_token = tokenizer.bos_token if tokenizer.bos_token is not None else ""
-        conditional_texts = [prefix + sep_token + text for text in texts]
-        # Calculate the length of the prefix tokens to exclude from loss calculation
-        prefix_token_length = tokenizer(prefix, return_tensors="pt").input_ids.size(1)
+        sep_token = get_separator_token(tokenizer)
+        bos_token_id = get_bos_token_id(tokenizer)
+        conditional_texts = build_conditional_texts(
+            texts=texts,
+            pool_texts=nonmembership_texts,
+            processed_prefix=processed_nonmember_prefix,
+            model=model,
+            tokenizer=tokenizer,
+            avg_length=avg_length,
+            pass_window=self.pass_window,
+            sep_token=sep_token,
+        )
         conditional_outputs = self.get_outputs(
             conditional_texts, model, sampling_params, lora_request, data_config
         )
         conditional_losses = [
-            self.process_output(output, prefix_token_length)
-            for output in conditional_outputs
+            self.process_output(
+                cond_output,
+                compute_conditional_prefix_length(
+                    cond_output, uncond_output, bos_token_id
+                ),
+            )
+            for cond_output, uncond_output in zip(
+                conditional_outputs, outputs, strict=True
+            )
         ]
 
         eps = 1e-10

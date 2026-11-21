@@ -129,3 +129,30 @@ class TestConReCaLLRun:
 
         unconditional_texts = get_outputs.call_args_list[0][0][0]
         assert unconditional_texts == ["member", "nonmem"]
+
+    def test_excludes_target_sample_from_member_and_nonmember_prefixes(self):
+        method = CONReCaLLMethod({"num_shots": 1, "pass_window": True})
+        texts = ["mem_alpha", "mem_beta", "non_alpha", "non_beta"]
+        labels = [1, 1, 0, 0]
+        uncond = [make_output([-2.0, -4.0]) for _ in texts]
+        member_cond = [make_output([-1.0, -1.0, -2.0, -4.0]) for _ in texts]
+        nonmember_cond = [make_output([-1.0, -1.0, -2.0, -4.0]) for _ in texts]
+
+        with mock.patch.object(
+            method,
+            "get_outputs",
+            side_effect=[uncond, member_cond, nonmember_cond],
+        ) as get_outputs:
+            method.run(
+                texts,
+                labels,
+                mock.MagicMock(),
+                make_tokenizer(prefix_token_length=2),
+                mock.MagicMock(),
+            )
+
+        member_prompts = get_outputs.call_args_list[1][0][0]
+        nonmember_prompts = get_outputs.call_args_list[2][0][0]
+        for idx, text in enumerate(texts):
+            assert text not in member_prompts[idx].split("<s>")[0]
+            assert text not in nonmember_prompts[idx].split("<s>")[0]

@@ -1,9 +1,13 @@
 from unittest import mock
 
 from src.methods.prefix_utils import (
+    build_conditional_texts,
+    compute_conditional_prefix_length,
     compute_prefix_loss,
     extract_prefix,
+    get_separator_token,
     process_prefix,
+    select_prefix_candidates,
 )
 
 
@@ -109,3 +113,82 @@ class TestComputePrefixLoss:
     def test_no_prefix_uses_all_tokens(self):
         output = make_prefix_output([-2.0, -4.0])
         assert compute_prefix_loss(output, prefix_token_length=0) == 3.0
+
+
+class TestSeparatorAndSelfLeakagePrevention:
+    def test_get_separator_token_bos_vs_bos_less(self):
+        tok_bos = mock.MagicMock()
+        tok_bos.bos_token = "<s>"
+        assert get_separator_token(tok_bos) == "<s>"
+
+        tok_no_bos = mock.MagicMock()
+        tok_no_bos.bos_token = None
+        assert get_separator_token(tok_no_bos) == "\n"
+
+    def test_select_prefix_candidates_leaves_room_for_backfill(self):
+        pool = ["n1", "n2", "n3"]
+        selected = select_prefix_candidates(pool, num_shots=5)
+        assert len(selected) == 2
+
+    def test_build_conditional_texts_prevents_self_reference_with_backfill(self):
+        texts = ["m1", "n1", "n2", "n3"]
+        pool_texts = ["n1", "n2", "n3"]
+        processed_prefix = ["n1", "n2"]
+
+        cond_texts = build_conditional_texts(
+            texts=texts,
+            pool_texts=pool_texts,
+            processed_prefix=processed_prefix,
+            model=make_model(1000),
+            tokenizer=make_tokenizer(5),
+            avg_length=5,
+            pass_window=False,
+            sep_token="<s>",
+        )
+
+        # m1 and n3 get the base prefix "n1n2<s>..."
+        assert cond_texts[0] == "n1n2<s>m1"
+        assert cond_texts[3] == "n1n2<s>n3"
+        # n1 and n2 never include themselves before the separator
+        assert not cond_texts[1].split("<s>")[0].__contains__("n1")
+        assert "n3" in cond_texts[1].split("<s>")[0]
+        assert not cond_texts[2].split("<s>")[0].__contains__("n2")
+        assert "n3" in cond_texts[2].split("<s>")[0]
+
+    def test_build_conditional_texts_sole_candidate_falls_back_to_unprefixed(self):
+        texts = ["m1", "n1"]
+        cond_texts = build_conditional_texts(
+            texts=texts,
+            pool_texts=["n1"],
+            processed_prefix=["n1"],
+            model=make_model(1000),
+            tokenizer=make_tokenizer(5),
+            avg_length=5,
+            pass_window=True,
+            sep_token="<s>",
+        )
+        assert cond_texts[0] == "n1<s>m1"
+        assert cond_texts[1] == "n1"
+
+
+class TestComputeConditionalPrefixLength:
+    @staticmethod
+    def _ids_output(ids):
+        out = mock.MagicMock()
+        out.prompt_token_ids = list(ids)
+        return out
+
+    def test_bos_model_excludes_prefix_and_separator_bos(self):
+        # Unconditional: [BOS=1, 10, 20, 30] -> 3 target tokens
+        # Conditional: [BOS=1, 90, 91, BOS=1, 10, 20, 30] -> exclude first 4
+        uncond = self._ids_output([1, 10, 20, 30])
+        cond = self._ids_output([1, 90, 91, 1, 10, 20, 30])
+        assert compute_conditional_prefix_length(cond, uncond, bos_token_id=1) == 4
+
+    def test_bos_less_bpe_boundary_merge_does_not_drop_target_token(self):
+        # Suppose prefix "foo " alone had 2 tokens [50, 51] and target "bar baz"
+        # had [10, 20], but "foo bar baz" merged " " + "bar" into token 11:
+        # cond_ids = [50, 11, 20]. Prefix length must be 1 (only [50]), not 2!
+        uncond = self._ids_output([10, 20])
+        cond = self._ids_output([50, 11, 20])
+        assert compute_conditional_prefix_length(cond, uncond, bos_token_id=None) == 1
