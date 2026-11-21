@@ -13,12 +13,16 @@ class TestFormatResultsDf:
                 "auroc": [0.853],
                 "fpr95": [0.5],
                 "tpr05": [float("nan")],
+                "tpr01": [0.125],
+                "elapsed_seconds": [1.234],
             }
         )
         formatted = format_results_df(df)
         assert formatted.loc[0, "auroc"] == "85.3%"
         assert formatted.loc[0, "fpr95"] == "50.0%"
         assert formatted.loc[0, "tpr05"] == "nan%"
+        assert formatted.loc[0, "tpr01"] == "12.5%"
+        assert formatted.loc[0, "elapsed_seconds"] == "1.23s"
         assert formatted.loc[0, "method"] == "loss"
 
     def test_original_df_not_modified(self):
@@ -32,25 +36,28 @@ class TestGetMetrics:
         # Members (label 1) all score higher than non-members (label 0).
         scores = [0.1, 0.2, 0.8, 0.9]
         labels = [0, 0, 1, 1]
-        auroc, fpr95, tpr05 = get_metrics(scores, labels)
+        auroc, fpr95, tpr05, tpr01 = get_metrics(scores, labels)
         assert auroc == 1.0
         assert fpr95 == 0.0
         assert tpr05 == 1.0
+        assert tpr01 == 1.0
 
     def test_single_class_returns_nan(self):
         # Metrics are undefined when only one label is present.
-        auroc, fpr95, tpr05 = get_metrics([0.1, 0.9], [1, 1])
+        auroc, fpr95, tpr05, tpr01 = get_metrics([0.1, 0.9], [1, 1])
         assert math.isnan(auroc)
         assert math.isnan(fpr95)
         assert math.isnan(tpr05)
+        assert math.isnan(tpr01)
 
-    def test_returns_three_finite_metrics_for_mixed_scores(self):
+    def test_returns_four_finite_metrics_for_mixed_scores(self):
         scores = [0.1, 0.6, 0.4, 0.9]
         labels = [0, 1, 0, 1]
-        auroc, fpr95, tpr05 = get_metrics(scores, labels)
+        auroc, fpr95, tpr05, tpr01 = get_metrics(scores, labels)
         assert 0.0 <= auroc <= 1.0
         assert 0.0 <= fpr95 <= 1.0
         assert 0.0 <= tpr05 <= 1.0
+        assert 0.0 <= tpr01 <= 1.0
 
 
 class TestFixSeed:

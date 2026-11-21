@@ -1,16 +1,20 @@
 import pytest
 from src.methods.factory import MethodFactory
 from src.methods.aeca import AECAMethod
+from src.methods.blind import BlindMethod
+from src.methods.camia import CAMIAMethod
 from src.methods.conrecall import CONReCaLLMethod
 from src.methods.dcpdd import DCPDDMethod
 from src.methods.loss import LossMethod
 from src.methods.lower import LowerMethod
 from src.methods.mink import MinKMethod
+from src.methods.minkpp import MinKPPMethod
 from src.methods.neighbour import NeighbourMethod
 from src.methods.pac import PACMethod
 from src.methods.recall import ReCaLLMethod
 from src.methods.ref import RefMethod
 from src.methods.samia import SaMIAMethod
+from src.methods.surp import SURPMethod
 from src.methods.zlib import ZlibMethod
 
 class TestMethodFactory:
@@ -27,6 +31,10 @@ class TestMethodFactory:
         ("ref", RefMethod, {"reference_model": {"model_id": "dummy"}}),
         ("neighbour", NeighbourMethod, {}),
         ("aeca", AECAMethod, {}),
+        ("camia", CAMIAMethod, {}),
+        ("surp", SURPMethod, {}),
+        ("minkpp", MinKPPMethod, {}),
+        ("blind", BlindMethod, {}),
     ])
     def test_create_method(self, type_, cls, params):
         method = MethodFactory.create_method({"type": type_, "params": params})
@@ -57,3 +65,32 @@ class TestMethodFactory:
         ]
         methods = MethodFactory.create_methods(configs)
         assert [type(m) for m in methods] == [LossMethod, RefMethod]
+
+    def test_custom_method_name(self):
+        method = MethodFactory.create_method(
+            {"type": "recall", "name": "recall_3shot", "params": {"num_shots": 3}}
+        )
+        assert method.method_name == "recall_3shot"
+
+    def test_empty_custom_method_name_raises(self):
+        with pytest.raises(ValueError, match="non-empty string"):
+            MethodFactory.create_method({"type": "loss", "name": "   "})
+
+    def test_disambiguates_duplicate_methods_by_params(self):
+        configs = [
+            {"type": "recall", "params": {"num_shots": 3}},
+            {"type": "recall", "params": {"num_shots": 10}},
+        ]
+        methods = MethodFactory.create_methods(configs)
+        names = [m.method_name for m in methods]
+        assert len(set(names)) == 2
+        assert names == ["recall_num_shots=3", "recall_num_shots=10"]
+
+    def test_disambiguates_identical_duplicate_methods_with_index(self):
+        configs = [
+            {"type": "loss", "params": {}},
+            {"type": "loss", "params": {}},
+        ]
+        methods = MethodFactory.create_methods(configs)
+        names = [m.method_name for m in methods]
+        assert names == ["loss_1", "loss_2"]

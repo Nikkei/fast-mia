@@ -1,0 +1,140 @@
+# Unified all-methods benchmark configuration on EleutherAI/pythia-2.8b
+# Evaluates Phase 1, Phase 2, and Phase 3 methods on swj0419/WikiMIA (text_length: 32)
+
+model:
+  model_id: "EleutherAI/pythia-2.8b"
+  trust_remote_code: true
+  max_num_seqs: 128
+  gpu_memory_utilization: 0.75
+
+sampling_parameters:
+  max_tokens: 1
+  prompt_logprobs: 20
+  temperature: 0.0
+  top_p: 1.0
+
+data:
+  data_path: "swj0419/WikiMIA"
+  format: "huggingface"
+  text_column: "input"
+  label_column: "label"
+  text_length: 32
+  space_delimited_language: true
+
+methods:
+  # Baselines
+  - type: "loss"
+    name: "loss"
+    params: {}
+  - type: "lower"
+    name: "lower"
+    params: {}
+  - type: "zlib"
+    name: "zlib"
+    params: {}
+
+  # Token distribution
+  - type: "mink"
+    name: "mink_0.1"
+    params:
+      ratio: 0.1
+  - type: "mink"
+    name: "mink_0.2"
+    params:
+      ratio: 0.2
+  - type: "mink"
+    name: "mink_0.3"
+    params:
+      ratio: 0.3
+  - type: "mink"
+    name: "mink_0.5"
+    params:
+      ratio: 0.5
+  - type: "mink"
+    name: "mink_0.8"
+    params:
+      ratio: 0.8
+  - type: "mink"
+    name: "mink_1.0"
+    params:
+      ratio: 1.0
+  - type: "dcpdd"
+    name: "dcpdd"
+    params:
+      file_num: 15
+      max_token_length: 1024
+      alpha: 0.01
+  - type: "aeca"
+    name: "aeca"
+    params:
+      lambda_coef: 5.0
+      alpha: 1.0
+      file_num: 15
+      max_token_length: 1024
+      default_i_ref: 0.5
+  - type: "camia"
+    name: "camia"
+    params:
+      signal: "combined"
+      aggregation: "edgington"
+      diversity_calibration: true
+  - type: "surp"
+    name: "surp_0.2_p50"
+    params:
+      ratio: 0.2
+      entropy_percentile: 50.0
+  - type: "minkpp"
+    name: "minkpp_0.2"
+    params:
+      ratio: 0.2
+      top_k: 20
+
+  # Text alternation
+  - type: "neighbour"
+    name: "neighbour"
+    params:
+      search_model_id: "bert-base-uncased"
+      num_neighbours: 100
+      dropout: 0.7
+      top_k: 10
+      max_length: 512
+  - type: "pac"
+    name: "pac"
+    params:
+      alpha: 0.3
+      N: 5
+  - type: "recall"
+    name: "recall"
+    params:
+      num_shots: 3
+      pass_window: false
+  - type: "conrecall"
+    name: "conrecall"
+    params:
+      num_shots: 3
+      pass_window: false
+      gamma: 0.5
+
+  # Black-box & model-free
+  - type: "samia"
+    name: "samia"
+    params:
+      num_samples: 5
+      prefix_ratio: 0.5
+      zlib: true
+  - type: "blind"
+    name: "blind_tfidf"
+    params:
+      features: "tfidf"
+      n_splits: 5
+      seed: 42
+  - type: "ref"
+    name: "ref"
+    params:
+      reference_model:
+        model_id: "EleutherAI/pythia-70m"
+        trust_remote_code: true
+        max_num_seqs: 128
+        gpu_memory_utilization: 0.15
+
+output_dir: "./results"

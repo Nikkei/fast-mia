@@ -151,9 +151,12 @@ Declare any number of methods. Each entry looks like:
 
 ```yaml
 - type: "method_name"
+  name: "custom_display_name" # Optional: custom identifier when running the same method with multiple parameter sets
   params:
     # method-specific keys
 ```
+
+If the same method type is declared multiple times without a custom `name`, Fast-MIA automatically disambiguates duplicate names using differing scalar parameters (or numeric suffixes `_1`, `_2`, ...).
 
 Available method types and their parameters:
 
@@ -165,6 +168,7 @@ Available method types and their parameters:
 | `mink` | https://github.com/swj0419/detect-pretrain-code | `ratio` (`0.0–1.0`, default `0.5`). |
 | `dcpdd` | https://github.com/zhang-wei-chao/DC-PDD | `file_num` (number of C4 text files, default `15`), `max_token_length` (max token length, default `1024`), `alpha` (upper bound of score, default `0.01`). |
 | `aeca` | https://github.com/kecy03/AECA | `lambda_coef` (weight of the NLL volatility term subtracted from the spectral volatility, default `1.0`), `alpha` (Laplace smoothing for the reference token distribution, must be positive, default `1.0`), `file_num` (number of C4 text files, default `15`), `max_token_length` (max token length, default `1024`), `default_i_ref` (self-information assigned to token IDs outside the reference vocabulary, default `0.5`). Shares the C4 token count cache with `dcpdd` when `file_num` and `max_token_length` match. Scores are always computed at temperature `1.0`: the paper's `1.5` needs full-vocabulary logits, which vLLM's prompt logprobs do not expose, so tune `lambda_coef` rather than `sampling_parameters.temperature`. |
+| `camia` | Context-Aware MIA (https://arxiv.org/abs/2409.13745). Extracts sequence-level NLL dynamics (count below mean, count below prefix mean, trajectory slope, below-mean log-likelihood) calibrated by token diversity with zero extra inference calls. | `signal` (`"combined"`, `"slope"`, `"cbm"`, `"cbpm"`, or `"mean_below"`, default `"combined"`), `aggregation` (`"edgington"` rank-CDF combination or `"linear"`, default `"edgington"`), `diversity_calibration` (penalize repetitive token sequences, default `True`). |
 | `lower` | Uses the ratio of loss after lowercasing the text | – |
 | `neighbour` | https://github.com/justusmattern27/neighbour-mia | `search_model_id` (masked LM for neighbour generation, default `"bert-base-uncased"`), `num_neighbours` (number of single-word-replacement neighbours per text, default `100`), `dropout` (embedding dropout probability, default `0.7`), `top_k` (top candidate tokens per position, default `10`), `max_length` (max token length for the masked LM, default `512`). |
 | `pac` | https://github.com/yyy01/PAC | `alpha` (augmentation strength, default `0.3`), `N` (augmentations per sample, default `5`). |
@@ -186,7 +190,7 @@ By default, Fast-MIA saves the following files in a timestamped folder:
 results/
 └── YYYYMMDD-HHMMSS/
     ├── config.yaml    # Copy of the configuration used
-    ├── results.csv    # Summary metrics (AUROC, FPR@95, TPR@5)
+    ├── results.csv    # Summary metrics (AUROC, FPR@95, TPR@5, TPR@1) + per-method runtime & cache deltas
     └── report.txt     # Human-readable summary report
 ```
 
@@ -204,13 +208,14 @@ uv run --with 'vllm==0.29.0' python main.py --config config/sample.yaml --detail
 results/
 └── YYYYMMDD-HHMMSS/           # Timestamped folder for each run
     ├── config.yaml            # Copy of the configuration used
-    ├── results.csv            # Summary metrics (AUROC, FPR@95, TPR@5)
+    ├── results.csv            # Summary metrics (AUROC, FPR@95, TPR@5, TPR@1) + per-method runtime & cache deltas
     ├── detailed_scores.csv    # Per-sample scores for each method
     ├── metadata.json          # Execution metadata (JSON format)
     ├── metadata.yaml          # Execution metadata (YAML format)
     ├── report.txt             # Human-readable summary report
     └── figures/
-        ├── roc_curves.png         # ROC curves for all methods
+        ├── roc_curves.png         # Linear ROC curves for all methods
+        ├── roc_curves_log.png     # Log-scale ROC curves highlighting low-FPR regime
         ├── score_distributions.png # Score histograms (member vs non-member)
         └── metrics_comparison.png  # Bar chart comparing metrics
 ```
@@ -228,7 +233,8 @@ The metadata files (`metadata.json` / `metadata.yaml`) include:
 | `data` | Dataset path, format, sample counts |
 | `sampling_parameters` | vLLM sampling configuration |
 | `methods` | List of evaluated methods with parameters |
-| `cache` | Cache hit/miss statistics |
+| `cache` | Cache hit/miss statistics (global and per-method) |
+| `method_stats` | Per-method execution time (`elapsed_seconds`) and cache hit/miss deltas |
 
 ### Detailed Scores
 

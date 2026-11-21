@@ -1,0 +1,49 @@
+# Benchmark configuration for Min-K%++ (`minkpp`, ICLR 2025 / arXiv:2404.02936)
+# Run with:
+#   uv run --with 'vllm==0.29.0' python main.py --config config/benchmark_minkpp.yaml --detailed-report
+# Note: Setting `prompt_logprobs: 20` lets `loss`, `zlib`, `mink`, and `minkpp` share a single cached vLLM pass!
+# On T4 GPUs (no bfloat16), add `dtype: float16` under `model`.
+
+model:
+  model_id: "EleutherAI/pythia-2.8b"
+  trust_remote_code: true
+  max_num_seqs: 64
+
+sampling_parameters:
+  max_tokens: 1
+  prompt_logprobs: 20
+  temperature: 0.0
+  top_p: 1.0
+
+data:
+  data_path: "swj0419/WikiMIA"
+  format: "huggingface"
+  text_column: "input"
+  label_column: "label"
+  text_length: 32
+  space_delimited_language: true
+
+methods:
+  - type: "loss"
+    params: {}
+  - type: "lower"
+    params: {}
+  - type: "zlib"
+    params: {}
+  - type: "mink"
+    params:
+      ratio: 0.2
+  - type: "minkpp"
+    params:
+      ratio: 0.1
+      top_k: 20
+  - type: "minkpp"
+    params:
+      ratio: 0.2
+      top_k: 20
+  - type: "minkpp"
+    params:
+      ratio: 0.5
+      top_k: 20
+
+output_dir: "./results"

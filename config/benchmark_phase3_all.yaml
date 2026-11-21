@@ -1,0 +1,110 @@
+# Unified Phase 3 benchmark configuration (PRs #86 camia, #87 surp, #88 minkpp, #89 blind)
+# Shares a SINGLE cached vLLM pass (prompt_logprobs: 20) across loss, zlib, mink, camia, surp, and minkpp!
+#
+# Run on GCE A100 (a2-highgpu-1g):
+#   ./gcp/submit_job.sh \
+#     --config config/benchmark_phase3_all.yaml \
+#     --bucket gs://YOUR_BUCKET/fast-mia-phase3 \
+#     --zone us-central1-b \
+#     --extra-args "--seed 42 --detailed-report" \
+#     --delete-after
+
+model:
+  model_id: "EleutherAI/pythia-2.8b"
+  trust_remote_code: true
+  max_num_seqs: 128
+
+sampling_parameters:
+  max_tokens: 1
+  prompt_logprobs: 20
+  temperature: 0.0
+  top_p: 1.0
+
+data:
+  data_path: "swj0419/WikiMIA"
+  format: "huggingface"
+  text_column: "input"
+  label_column: "label"
+  text_length: 32
+  space_delimited_language: true
+
+methods:
+  # Shared baselines across PRs #86-#89
+  - type: "loss"
+    name: "loss"
+    params: {}
+  - type: "lower"
+    name: "lower"
+    params: {}
+  - type: "zlib"
+    name: "zlib"
+    params: {}
+  - type: "mink"
+    name: "mink_0.2"
+    params:
+      ratio: 0.2
+
+  # PR #86: CAMIA (arXiv:2409.13745)
+  - type: "camia"
+    name: "camia"
+    params:
+      signal: "combined"
+      aggregation: "edgington"
+      diversity_calibration: true
+  - type: "camia"
+    name: "camia_slope"
+    params:
+      signal: "slope"
+      diversity_calibration: true
+  - type: "camia"
+    name: "camia_cbpm"
+    params:
+      signal: "cbpm"
+      diversity_calibration: true
+
+  # PR #87: SURP (arXiv:2407.21248)
+  - type: "surp"
+    name: "surp_0.2_p50"
+    params:
+      ratio: 0.2
+      entropy_percentile: 50.0
+  - type: "surp"
+    name: "surp_0.4_p50"
+    params:
+      ratio: 0.4
+      entropy_percentile: 50.0
+
+  # PR #88: Min-K%++ (ICLR 2025 / arXiv:2404.02936)
+  - type: "minkpp"
+    name: "minkpp_0.1"
+    params:
+      ratio: 0.1
+      top_k: 20
+  - type: "minkpp"
+    name: "minkpp_0.2"
+    params:
+      ratio: 0.2
+      top_k: 20
+  - type: "minkpp"
+    name: "minkpp_0.5"
+    params:
+      ratio: 0.5
+      top_k: 20
+
+  # PR #89: Blind MIA (IEEE S&P 2025 / arXiv:2406.16201)
+  - type: "blind"
+    name: "blind_tfidf"
+    params:
+      features: "tfidf"
+      n_splits: 5
+      seed: 42
+  - type: "blind"
+    name: "blind_zlib"
+    params:
+      features: "zlib"
+  - type: "blind"
+    name: "blind_digit_ratio"
+    params:
+      features: "digit_ratio"
+
+output_dir: "./results"
