@@ -92,6 +92,73 @@ class Visualizer:
         logging.info(f"ROC curves saved to {output_path}")
         return output_path
 
+    def plot_roc_curves_log(
+        self,
+        results: list[dict[str, Any]],
+        labels: list[int],
+    ) -> Path:
+        """Plot log-scale ROC curves emphasizing low-FPR behavior
+
+        Args:
+            results: List of method results containing scores
+            labels: Ground truth labels
+
+        Returns:
+            Path to saved figure
+        """
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        colors = plt.cm.tab10(np.linspace(0, 1, max(len(results), 1)))
+        num_negatives = sum(1 for label in labels if label == 0)
+        low_bound = min(1e-2, max(1e-4, 0.5 / max(num_negatives, 1)))
+
+        for i, result in enumerate(results):
+            method_name = result["method_name"]
+            scores = result["scores"]
+
+            if len(set(labels)) < 2:
+                continue
+
+            fpr, tpr, _ = roc_curve(labels, scores)
+            auroc = result["auroc"]
+            tpr01 = result.get("tpr01")
+            tpr01_str = (
+                f", TPR@1%={tpr01:.3f}"
+                if tpr01 is not None and not np.isnan(tpr01)
+                else ""
+            )
+
+            fpr_clipped = np.maximum(fpr, low_bound)
+            tpr_clipped = np.maximum(tpr, low_bound)
+            ax.plot(
+                fpr_clipped,
+                tpr_clipped,
+                color=colors[i],
+                lw=2,
+                label=f"{method_name} (AUC={auroc:.3f}{tpr01_str})",
+            )
+
+        diag = np.logspace(np.log10(low_bound), 0.0, 200)
+        ax.plot(diag, diag, color="gray", lw=1, linestyle="--", label="Random")
+        if low_bound <= 0.01:
+            ax.axvline(0.01, color="dimgray", lw=1, linestyle=":", label="1% FPR")
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlim([low_bound, 1.0])
+        ax.set_ylim([low_bound, 1.05])
+        ax.set_xlabel("False Positive Rate (log scale)", fontsize=12)
+        ax.set_ylabel("True Positive Rate (log scale)", fontsize=12)
+        ax.set_title("Log-Scale ROC Curves for MIA Methods", fontsize=14)
+        ax.legend(loc="lower right", fontsize=9)
+        ax.grid(True, which="both", alpha=0.3)
+
+        output_path = self.figures_dir / "roc_curves_log.png"
+        fig.savefig(output_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+
+        logging.info(f"Log-scale ROC curves saved to {output_path}")
+        return output_path
+
     def plot_score_distributions(
         self,
         results: list[dict[str, Any]],
@@ -176,15 +243,52 @@ class Visualizer:
         aurocs = [r["auroc"] for r in results]
         fpr95s = [r["fpr95"] for r in results]
         tpr05s = [r["tpr05"] for r in results]
+        has_tpr01 = bool(results) and all("tpr01" in r for r in results)
 
         x = np.arange(len(methods))
-        width = 0.25
+        fig, ax = plt.subplots(figsize=(max(12, len(methods) * 1.3), 6))
 
-        fig, ax = plt.subplots(figsize=(max(12, len(methods) * 1.2), 6))
-
-        bars1 = ax.bar(x - width, aurocs, width, label="AUROC", color="steelblue")
-        bars2 = ax.bar(x, fpr95s, width, label="FPR@95%TPR", color="coral")
-        bars3 = ax.bar(x + width, tpr05s, width, label="TPR@5%FPR", color="seagreen")
+        bar_groups: list[matplotlib.container.BarContainer] = []
+        if has_tpr01:
+            tpr01s = [r["tpr01"] for r in results]
+            width = 0.2
+            bar_groups.append(
+                ax.bar(x - 1.5 * width, aurocs, width, label="AUROC", color="steelblue")
+            )
+            bar_groups.append(
+                ax.bar(
+                    x - 0.5 * width, fpr95s, width, label="FPR@95%TPR", color="coral"
+                )
+            )
+            bar_groups.append(
+                ax.bar(
+                    x + 0.5 * width,
+                    tpr05s,
+                    width,
+                    label="TPR@5%FPR",
+                    color="seagreen",
+                )
+            )
+            bar_groups.append(
+                ax.bar(
+                    x + 1.5 * width,
+                    tpr01s,
+                    width,
+                    label="TPR@1%FPR",
+                    color="mediumpurple",
+                )
+            )
+        else:
+            width = 0.25
+            bar_groups.append(
+                ax.bar(x - width, aurocs, width, label="AUROC", color="steelblue")
+            )
+            bar_groups.append(
+                ax.bar(x, fpr95s, width, label="FPR@95%TPR", color="coral")
+            )
+            bar_groups.append(
+                ax.bar(x + width, tpr05s, width, label="TPR@5%FPR", color="seagreen")
+            )
 
         ax.set_xlabel("Method", fontsize=12)
         ax.set_ylabel("Score", fontsize=12)
@@ -209,9 +313,8 @@ class Visualizer:
                         fontsize=7,
                     )
 
-        add_labels(bars1)
-        add_labels(bars2)
-        add_labels(bars3)
+        for bars in bar_groups:
+            add_labels(bars)
 
         fig.tight_layout()
 
@@ -239,6 +342,7 @@ class Visualizer:
         paths = {}
 
         paths["roc_curves"] = self.plot_roc_curves(results, labels)
+        paths["roc_curves_log"] = self.plot_roc_curves_log(results, labels)
         paths["score_distributions"] = self.plot_score_distributions(results, labels)
         paths["metrics_comparison"] = self.plot_metrics_comparison(results)
 
