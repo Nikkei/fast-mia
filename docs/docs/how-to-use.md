@@ -232,7 +232,7 @@ The metadata files (`metadata.json` / `metadata.yaml`) include:
 | `data` | Dataset path, format, sample counts |
 | `sampling_parameters` | vLLM sampling configuration |
 | `methods` | List of evaluated methods with parameters |
-| `cache` | Cache hit/miss statistics (global and per-method) |
+| `cache` | Cache hit/miss statistics |
 | `method_stats` | Per-method execution time (`elapsed_seconds`) and cache hit/miss deltas |
 
 ### Detailed Scores

@@ -113,8 +113,6 @@ class ResultWriter:
                             "cache_misses": item.get("cache_misses"),
                         }
                     )
-        elif isinstance(cache_stats.get("per_method"), list):
-            method_stats = list(cache_stats["per_method"])
 
         metadata: dict[str, Any] = {
             "experiment": {

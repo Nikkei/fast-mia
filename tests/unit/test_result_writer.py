@@ -311,6 +311,7 @@ class TestResultWriter:
         )
 
         metadata = json.loads(paths["metadata"].read_text())
+        assert "per_method" not in metadata["cache"]
         assert len(metadata["method_stats"]) == 2
         assert metadata["method_stats"][0]["method_name"] == "loss"
         assert metadata["method_stats"][0]["elapsed_seconds"] == 1.5

@@ -110,7 +110,7 @@ class TestEvaluator:
         assert "elapsed_seconds" in result.detailed_results[0]
         assert "cache_hits" in result.detailed_results[0]
         assert "cache_misses" in result.detailed_results[0]
-        assert len(result.cache_stats["per_method"]) == 2
+        assert "per_method" not in result.cache_stats
         # Check data_stats
         assert result.data_stats["num_samples"] == 4
 

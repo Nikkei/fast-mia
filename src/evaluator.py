@@ -103,7 +103,6 @@ class Evaluator:
         # Evaluate with each method
         results: dict[str, list[Any]] = defaultdict(list)
         detailed_results: list[dict[str, Any]] = []
-        per_method_stats: list[dict[str, Any]] = []
 
         for method in self.methods:
             # Build keyword arguments based on method requirements
@@ -160,18 +159,9 @@ class Evaluator:
                     "cache_misses": cache_misses_delta,
                 }
             )
-            per_method_stats.append(
-                {
-                    "method_name": method.method_name,
-                    "elapsed_seconds": elapsed_seconds,
-                    "cache_hits": cache_hits_delta,
-                    "cache_misses": cache_misses_delta,
-                }
-            )
 
         # Get cache stats after evaluation
         cache_stats = BaseMethod.get_cache_stats()
-        cache_stats["per_method"] = per_method_stats
         logging.info(f"Cache stats after evaluation: {cache_stats}")
 
         return EvaluationResult(
