@@ -82,20 +82,15 @@ def _suggest_key(unknown_key: str, valid_keys: frozenset[str]) -> str | None:
 class Config:
     """Class for loading config files"""
 
-    def __init__(
-        self, config_path: str | Path, validate_required: bool = False
-    ) -> None:
+    def __init__(self, config_path: str | Path) -> None:
         """Load config file
 
         Args:
             config_path: Path to config file
-            validate_required: If True, validate required sections immediately
         """
         self.config_path = Path(config_path)
         self.config = self._load_config()
         self._warn_unknown_keys()
-        if validate_required:
-            self.validate()
 
     def _load_config(self) -> dict[str, Any]:
         """Load config file"""

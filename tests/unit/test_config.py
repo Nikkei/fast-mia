@@ -134,7 +134,7 @@ class TestConfig:
         assert "parameters" in messages
 
     def test_validate_succeeds_for_valid_config(self):
-        config = Config(get_fixture_path("valid_config.yaml"), validate_required=True)
+        config = Config(get_fixture_path("valid_config.yaml"))
         config.validate()
 
     def test_validate_raises_on_missing_model_id(self, tmp_path: Path):
@@ -147,8 +147,9 @@ class TestConfig:
                 }
             )
         )
+        config = Config(cfg_file)
         with pytest.raises(ValueError, match="model.model_id"):
-            Config(cfg_file, validate_required=True)
+            config.validate()
 
     def test_validate_raises_on_missing_data_path(self, tmp_path: Path):
         cfg_file = tmp_path / "missing_data.yaml"
@@ -161,8 +162,9 @@ class TestConfig:
                 }
             )
         )
+        config = Config(cfg_file)
         with pytest.raises(ValueError, match="data.data_path"):
-            Config(cfg_file, validate_required=True)
+            config.validate()
 
     def test_validate_raises_on_invalid_text_length(self, tmp_path: Path):
         cfg_file = tmp_path / "bad_length.yaml"
@@ -175,8 +177,9 @@ class TestConfig:
                 }
             )
         )
+        config = Config(cfg_file)
         with pytest.raises(ValueError, match="data.text_length"):
-            Config(cfg_file, validate_required=True)
+            config.validate()
 
     def test_validate_raises_on_empty_methods(self, tmp_path: Path):
         cfg_file = tmp_path / "empty_methods.yaml"
@@ -189,5 +192,6 @@ class TestConfig:
                 }
             )
         )
+        config = Config(cfg_file)
         with pytest.raises(ValueError, match="methods"):
-            Config(cfg_file, validate_required=True)
+            config.validate()
