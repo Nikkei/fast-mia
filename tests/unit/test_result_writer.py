@@ -319,4 +319,5 @@ class TestResultWriter:
 
         report_text = paths["report"].read_text()
         assert "TIMING & CACHE SUMMARY" in report_text
+        assert "first cache miss pays the inference cost" in report_text
         assert "Best TPR@1%FPR: loss (0.200)" in report_text

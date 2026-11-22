@@ -318,6 +318,8 @@ class ResultWriter:
                     "-" * 60,
                     "TIMING & CACHE SUMMARY",
                     "-" * 60,
+                    "Note: Model outputs are cached across methods, so elapsed time depends",
+                    "on execution order (the first cache miss pays the inference cost).",
                 ]
             )
             for item in timed_results:

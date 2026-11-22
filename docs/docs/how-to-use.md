@@ -193,6 +193,8 @@ results/
     └── report.txt     # Human-readable summary report
 ```
 
+> **Note on `elapsed_seconds`:** Because the model output cache is shared across all methods, `elapsed_seconds` reflects wall-clock time in **execution order** rather than standalone compute cost per method. The first method that misses the cache (`cache_misses > 0`) pays for model inference, while subsequent methods that hit the cache (`cache_hits > 0`, e.g., `zlib` or `mink` after `loss`) only run post-processing.
+
 ## Detailed Report Mode
 
 When you run with `--detailed-report`, Fast-MIA generates additional outputs for benchmarking and analysis:
@@ -233,7 +235,7 @@ The metadata files (`metadata.json` / `metadata.yaml`) include:
 | `sampling_parameters` | vLLM sampling configuration |
 | `methods` | List of evaluated methods with parameters |
 | `cache` | Cache hit/miss statistics |
-| `method_stats` | Per-method execution time (`elapsed_seconds`) and cache hit/miss deltas |
+| `method_stats` | Per-method execution time (`elapsed_seconds`, execution-order dependent due to shared cache) and cache hit/miss deltas |
 
 ### Detailed Scores
 
