@@ -79,11 +79,20 @@ class TestDCPDDProcessOutput:
         expected = -(0.5 * math.log(1.0 / (4.0 + eps)))
         assert method.process_output(output, freq_dist) == pytest.approx(expected)
 
-    def test_out_of_range_token_id_uses_zero_frequency(self):
+    def test_out_of_range_token_ids_are_excluded_from_mean(self):
+        method = DCPDDMethod({"alpha": 0.01})
+        # Token 50 is outside freq_dist [3, 4]; score should match token 1 alone
+        # rather than averaging in an alpha-clipped penalty for token 50.
+        out_mixed = make_output([0, 1, 50], [math.log(0.5), math.log(0.9)])
+        out_in_range_only = make_output([0, 1], [math.log(0.5)])
+        assert method.process_output(out_mixed, [3, 4]) == pytest.approx(
+            method.process_output(out_in_range_only, [3, 4])
+        )
+
+    def test_all_out_of_range_token_ids_returns_zero(self):
         method = DCPDDMethod({"alpha": 100.0})
         output = make_output([0, 50], [math.log(0.5)])
-        score = method.process_output(output, [3, 4])
-        assert math.isfinite(score)
+        assert method.process_output(output, [3, 4]) == 0.0
 
     def test_empty_log_probs_returns_zero(self):
         method = DCPDDMethod()

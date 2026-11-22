@@ -75,16 +75,19 @@ class DCPDDMethod(BaseMethod):
         # logprob is None, so align the token IDs to the tail of the prompt.
         token_ids = np.asarray(output.prompt_token_ids[-token_log_probs.size :])
 
-        # Keep the first occurrence of each token in the prompt tail.
+        # Keep the first occurrence of each token in the prompt tail, excluding
+        # token IDs outside the reference vocabulary (e.g. added special tokens).
         _, indexes = np.unique(token_ids, return_index=True)
         indexes.sort()
 
-        unique_token_ids = token_ids[indexes]
         freq_array = np.asarray(freq_dist, dtype=np.float64)
-        x_freq = np.zeros(unique_token_ids.shape, dtype=np.float64)
+        unique_token_ids = token_ids[indexes]
         in_range = (unique_token_ids >= 0) & (unique_token_ids < freq_array.size)
-        x_freq[in_range] = freq_array[unique_token_ids[in_range]]
+        indexes = indexes[in_range]
+        if indexes.size == 0:
+            return 0.0
 
+        x_freq = freq_array[token_ids[indexes]]
         x_prob = np.exp(token_log_probs[indexes])
         eps = 1e-10
         ce = x_prob * np.log(1.0 / (x_freq + eps))
