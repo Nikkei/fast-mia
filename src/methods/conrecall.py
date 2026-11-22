@@ -28,6 +28,7 @@ from .prefix_utils import (
     compute_prefix_loss,
     get_bos_token_id,
     get_separator_token,
+    has_post_prefix_logprobs,
     process_prefix,
     select_prefix_candidates,
 )
@@ -148,11 +149,17 @@ class CONReCaLLMethod(BaseMethod):
                 f"nonmember prefix num_shots was changed: {self.num_shots} -> {processed_nonmember_num_shots}"
             )
 
+        fallback_indices: set[int] = set()
+
         # calculate unconditional loss
         outputs = self.get_outputs(
             texts, model, sampling_params, lora_request, data_config
         )
-        losses = [self.process_output(output, 0) for output in outputs]
+        losses: list[float] = []
+        for idx, output in enumerate(outputs):
+            if not has_post_prefix_logprobs(output, 0):
+                fallback_indices.add(idx)
+            losses.append(self.process_output(output, 0))
 
         sep_token = get_separator_token(tokenizer)
         bos_token_id = get_bos_token_id(tokenizer)
@@ -171,17 +178,18 @@ class CONReCaLLMethod(BaseMethod):
         member_conditional_outputs = self.get_outputs(
             member_conditional_texts, model, sampling_params, lora_request, data_config
         )
-        member_conditional_losses = [
-            self.process_output(
-                cond_output,
-                compute_conditional_prefix_length(
-                    cond_output, uncond_output, bos_token_id
-                ),
+        member_conditional_losses: list[float] = []
+        for idx, (cond_output, uncond_output) in enumerate(
+            zip(member_conditional_outputs, outputs, strict=True)
+        ):
+            prefix_len = compute_conditional_prefix_length(
+                cond_output, uncond_output, bos_token_id
             )
-            for cond_output, uncond_output in zip(
-                member_conditional_outputs, outputs, strict=True
+            if not has_post_prefix_logprobs(cond_output, prefix_len):
+                fallback_indices.add(idx)
+            member_conditional_losses.append(
+                self.process_output(cond_output, prefix_len)
             )
-        ]
 
         # calculate nonmember prefix conditional loss without self-reference leakage
         nonmember_conditional_texts = build_conditional_texts(
@@ -201,17 +209,24 @@ class CONReCaLLMethod(BaseMethod):
             lora_request,
             data_config,
         )
-        nonmember_conditional_losses = [
-            self.process_output(
-                cond_output,
-                compute_conditional_prefix_length(
-                    cond_output, uncond_output, bos_token_id
-                ),
+        nonmember_conditional_losses: list[float] = []
+        for idx, (cond_output, uncond_output) in enumerate(
+            zip(nonmember_conditional_outputs, outputs, strict=True)
+        ):
+            prefix_len = compute_conditional_prefix_length(
+                cond_output, uncond_output, bos_token_id
             )
-            for cond_output, uncond_output in zip(
-                nonmember_conditional_outputs, outputs, strict=True
+            if not has_post_prefix_logprobs(cond_output, prefix_len):
+                fallback_indices.add(idx)
+            nonmember_conditional_losses.append(
+                self.process_output(cond_output, prefix_len)
             )
-        ]
+
+        if fallback_indices:
+            logging.warning(
+                f"{self.method_name}: {len(fallback_indices)}/{len(outputs)} sample(s) "
+                "had no valid target token logprobs; fell back to 0.0 loss."
+            )
 
         eps = 1e-10
         scores = [

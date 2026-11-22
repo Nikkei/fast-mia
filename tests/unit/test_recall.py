@@ -133,3 +133,31 @@ class TestReCaLLRun:
         for idx, text in enumerate(texts):
             prefix_part = conditional_texts[idx].split("<s>")[0]
             assert text not in prefix_part
+
+    def test_warns_once_when_target_logprobs_empty(self):
+        method = ReCaLLMethod({"num_shots": 1, "pass_window": True})
+        texts = ["single_tok", "normal_nonmember"]
+        labels = [1, 0]
+
+        empty_out = mock.MagicMock()
+        empty_out.prompt_token_ids = [0]
+        empty_out.prompt_logprobs = [None]
+
+        uncond = [empty_out, make_output([-2.0, -4.0])]
+        cond = [empty_out, make_output([-1.0, -1.0, -2.0, -4.0])]
+
+        with (
+            mock.patch.object(method, "get_outputs", side_effect=[uncond, cond]),
+            mock.patch("src.methods.recall.logging.warning") as warn,
+        ):
+            scores = method.run(
+                texts,
+                labels,
+                mock.MagicMock(),
+                make_tokenizer(prefix_token_length=2),
+                mock.MagicMock(),
+            )
+
+        assert scores[0] == 0.0
+        warn.assert_called_once()
+        assert "1/2 sample(s)" in warn.call_args[0][0]

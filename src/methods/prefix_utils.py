@@ -235,6 +235,19 @@ def compute_conditional_prefix_length(
     return max(0, len(cond_ids) - len(target_ids))
 
 
+def has_post_prefix_logprobs(output: RequestOutput, prefix_token_length: int) -> bool:
+    """Return True if at least one non-None token logprob exists after the prefix."""
+    token_logprob_pairs = zip(
+        output.prompt_token_ids, output.prompt_logprobs, strict=True
+    )
+    for i, (_token_id, prompt_logprob) in enumerate(token_logprob_pairs):
+        if i < prefix_token_length:
+            continue
+        if prompt_logprob is not None:
+            return True
+    return False
+
+
 def compute_prefix_loss(output: RequestOutput, prefix_token_length: int) -> float:
     """Compute negative mean log-likelihood excluding prefix tokens.
 

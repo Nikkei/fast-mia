@@ -127,3 +127,33 @@ class TestDCPDDRun:
 
         assert len(scores) == 1
         assert math.isfinite(scores[0])
+
+    def test_run_logs_single_warning_with_fallback_sample_count(self):
+        method = DCPDDMethod({"alpha": 0.01})
+        outputs = [
+            make_output([0], []),  # empty logprobs -> fallback
+            make_output([0, 1, 2], [-1.0, -2.0]),  # valid
+            make_output([0, 99], [-1.0]),  # out-of-range only -> fallback
+        ]
+        model = mock.MagicMock()
+        model.model_config.model = "test-model"
+
+        with (
+            mock.patch(
+                "src.methods.dcpdd.load_or_build_freq_dist",
+                return_value=[1, 10, 20],
+            ),
+            mock.patch.object(method, "get_outputs", return_value=outputs),
+            mock.patch("src.methods.dcpdd.logging.warning") as warn,
+        ):
+            scores = method.run(
+                ["a", "hello world", "<special>"],
+                model,
+                mock.MagicMock(),
+                mock.MagicMock(),
+            )
+
+        assert scores[0] == 0.0
+        assert scores[2] == 0.0
+        warn.assert_called_once()
+        assert "2/3 sample(s)" in warn.call_args[0][0]
