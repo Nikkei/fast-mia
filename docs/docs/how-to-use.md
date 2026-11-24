@@ -117,6 +117,7 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 | `label_column` | ❌ | `label` | Column containing membership labels (`1` = member, `0` = non-member). Set to `null` to run in **unlabeled audit mode** (outputs per-sample MIA scores without ground-truth labels). |
 | `text_length` | ❌ | `32` | Number of words kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
 | `space_delimited_language` | ❌ | `true` | Set to `false` for languages without whitespace like Japanese. |
+| `include_text_in_scores` | ❌ | `false` | Audit mode only. Set to `true` to include the (truncated) `text` column in `detailed_scores.csv`; by default only `sample_id` and method scores are written. |
 
 **Note**: If `space_delimited_language` is `false`, you must pre-process your text and insert spaces between words beforehand; Fast-MIA assumes the input is already space-separated and will simply strip the spaces back out during scoring.
 
@@ -131,12 +132,13 @@ data:
   text_column: "text"
   label_column: null
   text_length: 128
+  include_text_in_scores: false  # optional; set true to include sample texts in detailed_scores.csv
 ```
 
 In audit mode:
 - Methods that require ground-truth labels (such as `conrecall`) are rejected at startup with a descriptive `ValueError`.
 - `results.csv` reports score distribution statistics (`mean_score`, `std_score`, `min_score`, `median_score`, `max_score`).
-- Per-sample scores are automatically written to `detailed_scores.csv` even without `--detailed-report`.
+- Per-sample scores are automatically written to `detailed_scores.csv` (with `sample_id` and per-method scores; set `data.include_text_in_scores: true` to also include the `text` column) even without `--detailed-report`.
 
 #### Supported File Formats
 

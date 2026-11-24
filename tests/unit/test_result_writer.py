@@ -295,14 +295,23 @@ class TestResultWriter:
             results_df=results_df,
             results=detailed_results,
             data_stats=data_stats,
-            texts=texts,
         )
 
         assert "detailed_scores" in paths
         scores_df = pd.read_csv(paths["detailed_scores"])
         assert "label" not in scores_df.columns
-        assert list(scores_df["text"]) == texts
+        assert "text" not in scores_df.columns
+        assert list(scores_df["sample_id"]) == [0, 1, 2]
         assert list(scores_df["loss"]) == [-1.2, -1.0, -0.8]
+
+        opt_in_paths = writer.save_default(
+            results_df=results_df,
+            results=detailed_results,
+            data_stats=data_stats,
+            texts=texts,
+        )
+        opt_in_scores_df = pd.read_csv(opt_in_paths["detailed_scores"])
+        assert list(opt_in_scores_df["text"]) == texts
 
         report_content = paths["report"].read_text()
         assert "Mode: Unlabeled Audit" in report_content

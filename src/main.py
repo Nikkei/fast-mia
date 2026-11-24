@@ -147,6 +147,8 @@ def main() -> None:
     run_dir.mkdir(parents=True, exist_ok=False)
 
     result_writer = ResultWriter(run_dir, config, start_time)
+    include_text_in_scores = bool(config.data.get("include_text_in_scores", False))
+    texts_for_scores = eval_result.texts if include_text_in_scores else None
 
     if args.detailed_report:
         # Detailed report mode: metadata, scores, and visualizations
@@ -159,7 +161,7 @@ def main() -> None:
             cache_stats=eval_result.cache_stats,
             data_stats=eval_result.data_stats,
             end_time=end_time,
-            texts=eval_result.texts,
+            texts=texts_for_scores,
         )
 
         # Generate visualizations
@@ -175,7 +177,7 @@ def main() -> None:
             results_df=eval_result.results_df,
             results=eval_result.detailed_results,
             data_stats=eval_result.data_stats,
-            texts=eval_result.texts,
+            texts=texts_for_scores,
         )
 
     logging.info(f"\nAll outputs saved to: {run_dir}")
