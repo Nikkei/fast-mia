@@ -308,3 +308,32 @@ class TestDataLoader:
                     text_column="text",
                     label_column="label",
                 )
+
+    def test_missing_text_raises_value_error(self, tmp_path: Path):
+        """Test that missing values in text column raise ValueError"""
+        csv_path = tmp_path / "missing_text.csv"
+        pd.DataFrame({"text": ["valid text", None], "label": [1, 0]}).to_csv(
+            csv_path, index=False
+        )
+        loader = DataLoader(
+            data_path=csv_path,
+            data_format="csv",
+            text_column="text",
+            label_column="label",
+        )
+        with pytest.raises(ValueError, match="Missing values found in text column"):
+            loader.get_data()
+
+    def test_missing_text_in_audit_mode_raises_value_error(self, tmp_path: Path):
+        """Test that missing values in text column raise ValueError in audit mode"""
+        jsonl_path = tmp_path / "missing_audit.jsonl"
+        jsonl_path.write_text('{"text": "valid text"}\n{"text": null}\n')
+        loader = DataLoader(
+            data_path=jsonl_path,
+            data_format="jsonl",
+            text_column="text",
+            label_column=None,
+        )
+        with pytest.raises(ValueError, match="Missing values found in text column"):
+            loader.get_data()
+

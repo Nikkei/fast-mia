@@ -127,6 +127,12 @@ class DataLoader:
                 "Check data.text_column and data.label_column in your config."
             )
 
+        if pd.isna(self.data[self.text_column]).any():
+            raise ValueError(
+                f"Missing values found in text column '{self.text_column}'. "
+                "Remove or fill missing texts before running Fast-MIA."
+            )
+
         raw_texts = [str(text) for text in self.data[self.text_column].tolist()]
         if text_length:
             texts = [" ".join(text.split()[:text_length]) for text in raw_texts]
