@@ -21,6 +21,13 @@ from sklearn.metrics import auc, roc_curve
 from transformers import set_seed
 
 METRIC_COLUMNS = ("auroc", "fpr95", "tpr05")
+AUDIT_SCORE_COLUMNS = (
+    "mean_score",
+    "std_score",
+    "min_score",
+    "median_score",
+    "max_score",
+)
 
 
 def format_results_df(results_df: pd.DataFrame) -> pd.DataFrame:
@@ -37,6 +44,11 @@ def format_results_df(results_df: pd.DataFrame) -> pd.DataFrame:
         if column in formatted_df.columns:
             formatted_df[column] = formatted_df[column].map(
                 lambda value: f"{value:.1%}"
+            )
+    for column in AUDIT_SCORE_COLUMNS:
+        if column in formatted_df.columns:
+            formatted_df[column] = formatted_df[column].map(
+                lambda value: f"{value:.4f}"
             )
     return formatted_df
 

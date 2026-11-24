@@ -17,6 +17,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from .config import Config
@@ -32,9 +33,21 @@ class EvaluationResult:
 
     results_df: pd.DataFrame
     detailed_results: list[dict[str, Any]]
-    labels: list[int]
+    labels: list[int] | None
     data_stats: dict[str, Any]
     cache_stats: dict[str, Any] = field(default_factory=dict)
+    texts: list[str] | None = None
+
+
+def validate_audit_mode_methods(methods: list[BaseMethod]) -> None:
+    """Validate that no configured method requires ground-truth labels."""
+    for method in methods:
+        if method.requires_labels:
+            raise ValueError(
+                f"Method '{method.method_name}' requires ground-truth labels "
+                "and cannot be used in unlabeled audit mode "
+                "(data.label_column: null)."
+            )
 
 
 class Evaluator:
@@ -81,13 +94,23 @@ class Evaluator:
 
         # Get data
         texts, labels = self.data_loader.get_data(text_length)
+        audit_mode = labels is None
 
-        # Calculate data statistics
-        data_stats = {
-            "num_samples": len(texts),
-            "num_members": sum(labels),
-            "num_nonmembers": len(labels) - sum(labels),
-        }
+        if audit_mode:
+            validate_audit_mode_methods(self.methods)
+            data_stats: dict[str, Any] = {
+                "num_samples": len(texts),
+                "num_members": None,
+                "num_nonmembers": None,
+                "audit_mode": True,
+            }
+        else:
+            assert labels is not None
+            data_stats = {
+                "num_samples": len(texts),
+                "num_members": sum(labels),
+                "num_nonmembers": len(labels) - sum(labels),
+            }
 
         # Get sampling parameters
         sampling_params = self.model_loader.get_sampling_params(
@@ -100,12 +123,12 @@ class Evaluator:
             lora_request = self.model_loader.get_lora_request(lora_config)
 
         # Evaluate with each method
-        results = defaultdict(list)
-        detailed_results = []
+        results: dict[str, list[Any]] = defaultdict(list)
+        detailed_results: list[dict[str, Any]] = []
 
         for method in self.methods:
             # Build keyword arguments based on method requirements
-            kwargs = {
+            kwargs: dict[str, Any] = {
                 "texts": texts,
                 "model": self.model_loader.model,
                 "lora_request": lora_request,
@@ -120,25 +143,63 @@ class Evaluator:
 
             scores = method.run(**kwargs)
 
-            # Calculate metrics
-            auroc, fpr95, tpr05 = get_metrics(scores, labels)
+            if audit_mode:
+                scores_arr = np.asarray(scores, dtype=float)
+                if scores_arr.size > 0 and not np.all(np.isnan(scores_arr)):
+                    mean_score = float(np.nanmean(scores_arr))
+                    std_score = float(np.nanstd(scores_arr))
+                    min_score = float(np.nanmin(scores_arr))
+                    median_score = float(np.nanmedian(scores_arr))
+                    max_score = float(np.nanmax(scores_arr))
+                else:
+                    mean_score = float("nan")
+                    std_score = float("nan")
+                    min_score = float("nan")
+                    median_score = float("nan")
+                    max_score = float("nan")
 
-            # Add results for DataFrame (raw values; format only for display)
-            results["method"].append(method.method_name)
-            results["auroc"].append(auroc)
-            results["fpr95"].append(fpr95)
-            results["tpr05"].append(tpr05)
+                results["method"].append(method.method_name)
+                results["mean_score"].append(mean_score)
+                results["std_score"].append(std_score)
+                results["min_score"].append(min_score)
+                results["median_score"].append(median_score)
+                results["max_score"].append(max_score)
 
-            # Add detailed results for visualization
-            detailed_results.append(
-                {
-                    "method_name": method.method_name,
-                    "scores": scores,
-                    "auroc": auroc,
-                    "fpr95": fpr95,
-                    "tpr05": tpr05,
-                }
-            )
+                detailed_results.append(
+                    {
+                        "method_name": method.method_name,
+                        "scores": scores,
+                        "auroc": float("nan"),
+                        "fpr95": float("nan"),
+                        "tpr05": float("nan"),
+                        "mean_score": mean_score,
+                        "std_score": std_score,
+                        "min_score": min_score,
+                        "median_score": median_score,
+                        "max_score": max_score,
+                    }
+                )
+            else:
+                assert labels is not None
+                # Calculate metrics
+                auroc, fpr95, tpr05 = get_metrics(scores, labels)
+
+                # Add results for DataFrame (raw values; format only for display)
+                results["method"].append(method.method_name)
+                results["auroc"].append(auroc)
+                results["fpr95"].append(fpr95)
+                results["tpr05"].append(tpr05)
+
+                # Add detailed results for visualization
+                detailed_results.append(
+                    {
+                        "method_name": method.method_name,
+                        "scores": scores,
+                        "auroc": auroc,
+                        "fpr95": fpr95,
+                        "tpr05": tpr05,
+                    }
+                )
 
         # Get cache stats after evaluation
         cache_stats = BaseMethod.get_cache_stats()
@@ -150,4 +211,5 @@ class Evaluator:
             labels=labels,
             data_stats=data_stats,
             cache_stats=cache_stats,
+            texts=texts,
         )

@@ -30,7 +30,7 @@ class DataLoader:
         data_path: str | Path | None = None,
         data_format: str = "csv",
         text_column: str = "text",
-        label_column: str = "label",
+        label_column: str | None = "label",
     ) -> None:
         """Initialize the data loader
 
@@ -38,11 +38,11 @@ class DataLoader:
             data_path: Path to the data (file or directory, or dataset name for huggingface format)
             data_format: Data format ("csv", "jsonl", "json", "parquet", "huggingface")
             text_column: Name of the text column
-            label_column: Name of the label column
+            label_column: Name of the label column, or None for unlabeled audit mode
         """
         self.text_column = text_column
         self.label_column = label_column
-        self.data = None
+        self.data: pd.DataFrame | None = None
 
         # Load data (only if data_path is specified)
         if data_path is not None:
@@ -94,7 +94,9 @@ class DataLoader:
         else:
             raise ValueError(f"Unsupported data format: {data_format}")
 
-    def get_data(self, text_length: int | None = None) -> tuple[list[str], list[int]]:
+    def get_data(
+        self, text_length: int | None = None
+    ) -> tuple[list[str], list[int] | None]:
         """Get data
 
         Args:
@@ -102,7 +104,7 @@ class DataLoader:
 
         Returns:
             texts: List of texts
-            labels: List of labels
+            labels: List of labels, or None when label_column is None (audit mode)
         """
         if self.data is None:
             raise ValueError(
@@ -110,9 +112,12 @@ class DataLoader:
                 "DataLoader.load_wikimia(), or DataLoader.load_mimir()."
             )
 
-        required_columns = {self.text_column, self.label_column}
+        required_columns = [self.text_column]
+        if self.label_column is not None:
+            required_columns.append(self.label_column)
+
         missing_columns = sorted(
-            [col for col in required_columns if col not in self.data.columns]
+            {col for col in required_columns if col not in self.data.columns}
         )
         if missing_columns:
             column_list = "', '".join(missing_columns)
@@ -122,26 +127,23 @@ class DataLoader:
                 "Check data.text_column and data.label_column in your config."
             )
 
+        if pd.isna(self.data[self.text_column]).any():
+            raise ValueError(
+                f"Missing values found in text column '{self.text_column}'. "
+                "Remove or fill missing texts before running Fast-MIA."
+            )
+
+        raw_texts = [str(text) for text in self.data[self.text_column].tolist()]
         if text_length:
-            # Split by number of words
-            texts = []
-            labels = []
-
-            for _, row in self.data.iterrows():
-                text = row[self.text_column]
-                label = row[self.label_column]
-
-                texts.append(" ".join(text.split()[:text_length]))
-                labels.append(label)
-
-            return texts, labels
-
+            texts = [" ".join(text.split()[:text_length]) for text in raw_texts]
         else:
-            # No split
-            texts = self.data[self.text_column].tolist()
-            labels = self.data[self.label_column].tolist()
+            texts = raw_texts
 
-            return texts, labels
+        if self.label_column is None:
+            return texts, None
+
+        labels = self.data[self.label_column].tolist()
+        return texts, labels
 
     @staticmethod
     def load_wikimia(text_length: int) -> "DataLoader":
