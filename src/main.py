@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 # Import required modules
 from .config import Config
 from .data_loader import DataLoader
-from .evaluator import Evaluator
+from .evaluator import Evaluator, validate_audit_mode_methods
 from .methods.factory import MethodFactory
 from .model_loader import ModelLoader
 from .result_writer import ResultWriter
@@ -113,11 +113,13 @@ def main() -> None:
             label_column=label_column,
         )
 
+    # Initialize methods and validate audit-mode compatibility before loading the model
+    methods = MethodFactory.create_methods(config.methods)
+    if data_loader.label_column is None:
+        validate_audit_mode_methods(methods)
+
     # Initialize model loader
     model_loader = ModelLoader(config.model)
-
-    # Initialize methods
-    methods = MethodFactory.create_methods(config.methods)
 
     # Initialize and run evaluator
     evaluator = Evaluator(

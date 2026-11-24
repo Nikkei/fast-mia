@@ -39,6 +39,17 @@ class EvaluationResult:
     texts: list[str] | None = None
 
 
+def validate_audit_mode_methods(methods: list[BaseMethod]) -> None:
+    """Validate that no configured method requires ground-truth labels."""
+    for method in methods:
+        if method.requires_labels:
+            raise ValueError(
+                f"Method '{method.method_name}' requires ground-truth labels "
+                "and cannot be used in unlabeled audit mode "
+                "(data.label_column: null)."
+            )
+
+
 class Evaluator:
     """Evaluator for membership inference attacks"""
 
@@ -86,13 +97,7 @@ class Evaluator:
         audit_mode = labels is None
 
         if audit_mode:
-            for method in self.methods:
-                if method.requires_labels:
-                    raise ValueError(
-                        f"Method '{method.method_name}' requires ground-truth labels "
-                        "and cannot be used in unlabeled audit mode "
-                        "(data.label_column: null)."
-                    )
+            validate_audit_mode_methods(self.methods)
             data_stats: dict[str, Any] = {
                 "num_samples": len(texts),
                 "num_members": None,
