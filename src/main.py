@@ -100,6 +100,7 @@ def main() -> None:
             data_format=data_config.get("format", "csv"),
             text_column=data_config.get("text_column", "text"),
             label_column=data_config.get("label_column", "label"),
+            group_column=data_config.get("group_column"),
         )
 
     # Initialize model loader
@@ -146,21 +147,29 @@ def main() -> None:
             cache_stats=eval_result.cache_stats,
             data_stats=eval_result.data_stats,
             end_time=end_time,
+            dataset_inference_df=eval_result.dataset_inference_df,
+            group_inference_df=eval_result.group_inference_df,
+            chunk_scaling_df=eval_result.chunk_scaling_df,
         )
 
         # Generate visualizations
         visualizer = Visualizer(run_dir)
+        alpha = float(config.dataset_inference.get("alpha", 0.05))
         figure_paths = visualizer.generate_all_plots(
             eval_result.detailed_results,
             eval_result.labels,
+            chunk_scaling_df=eval_result.chunk_scaling_df,
+            alpha=alpha,
         )
         saved_paths.update(figure_paths)
     else:
-        # Default mode: config.yaml, results.csv, report.txt
+        # Default mode: config.yaml, results.csv, report.txt (+ dataset_inference.csv)
         saved_paths = result_writer.save_default(
             results_df=eval_result.results_df,
             results=eval_result.detailed_results,
             data_stats=eval_result.data_stats,
+            dataset_inference_df=eval_result.dataset_inference_df,
+            group_inference_df=eval_result.group_inference_df,
         )
 
     logging.info(f"\nAll outputs saved to: {run_dir}")
