@@ -79,14 +79,7 @@ class DataLoader:
         else:
             dataset = load_dataset(dataset_name, **load_kwargs)
 
-        if hasattr(dataset, "to_pandas"):
-            df = dataset.to_pandas()
-            if isinstance(df, pd.DataFrame):
-                return df
-            return pd.concat(list(df), ignore_index=True)
-        if isinstance(dataset, pd.DataFrame):
-            return dataset
-        return pd.DataFrame(dataset)
+        return dataset.to_pandas()
 
     def _load_data(
         self, data_path: str | Path | None, data_format: str
