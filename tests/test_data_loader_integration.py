@@ -84,15 +84,29 @@ class TestDataLoaderIntegration:
             "swj0419/WikiMIA", split=f"WikiMIA_length{text_length}"
         )
 
-    def test_huggingface_integration_not_supported(self):
-        """Integration test to ensure unsupported Hugging Face datasets fail fast"""
-        with pytest.raises(ValueError, match="Generic Hugging Face datasets are not supported"):
-            DataLoader(
-                data_path="dummy/dataset",
-                data_format="huggingface",
-                text_column="text",
-                label_column="label",
-            )
+    @mock.patch("src.data_loader.load_dataset")
+    def test_huggingface_generic_integration(self, mock_load_dataset):
+        """Integration test for generic Hugging Face datasets"""
+        mock_dataset = mock.MagicMock()
+        mock_dataset.to_pandas.return_value = pd.DataFrame(
+            {
+                "text": ["Labeled HF sample one", "Labeled HF sample two"],
+                "label": [1, 0],
+            }
+        )
+        mock_load_dataset.return_value = mock_dataset
+
+        loader = DataLoader(
+            data_path="dummy/dataset",
+            data_format="huggingface",
+            text_column="text",
+            label_column="label",
+            split="test",
+        )
+        texts, labels = loader.get_data(text_length=3)
+        assert texts == ["Labeled HF sample", "Labeled HF sample"]
+        assert labels == [1, 0]
+        mock_load_dataset.assert_called_once_with("dummy/dataset", split="test")
 
     def test_text_length_splitting_integration(self, sample_csv_path):
         """Integration test for text splitting with specified text length"""

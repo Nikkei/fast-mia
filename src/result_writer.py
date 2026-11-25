@@ -96,6 +96,21 @@ class ResultWriter:
         duration = end_time - self.start_time
         git_info = _get_git_info()
 
+        data_format = self.config.data.get("format", "csv")
+        data_metadata: dict[str, Any] = {
+            "data_path": self.config.data.get("data_path"),
+            "format": data_format,
+            "text_length": self.config.data.get("text_length"),
+            "text_column": self.config.data.get("text_column", "text"),
+            "label_column": self.config.data.get("label_column", "label"),
+            **data_stats,
+        }
+        if data_format == "huggingface":
+            data_metadata["dataset_config_name"] = self.config.data.get(
+                "dataset_config_name"
+            )
+            data_metadata["split"] = self.config.data.get("split", "train")
+
         metadata = {
             "experiment": {
                 "start_time": self.start_time.isoformat(),
@@ -114,14 +129,7 @@ class ResultWriter:
                 "trust_remote_code": self.config.model.get("trust_remote_code", False),
                 "enable_lora": self.config.model.get("enable_lora", False),
             },
-            "data": {
-                "data_path": self.config.data.get("data_path"),
-                "format": self.config.data.get("format", "csv"),
-                "text_length": self.config.data.get("text_length"),
-                "text_column": self.config.data.get("text_column", "text"),
-                "label_column": self.config.data.get("label_column", "label"),
-                **data_stats,
-            },
+            "data": data_metadata,
             "sampling_parameters": self.config.sampling_parameters,
             "methods": self.config.methods,
             "cache": cache_stats,

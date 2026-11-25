@@ -173,6 +173,29 @@ class TestResultWriter:
         assert "model" in metadata
         assert "data" in metadata
         assert "cache" in metadata
+        assert "dataset_config_name" not in metadata["data"]
+        assert "split" not in metadata["data"]
+
+    def test_save_metadata_huggingface_includes_dataset_fields(
+        self,
+        tmp_path: Path,
+        config: Config,
+        sample_cache_stats: dict,
+        sample_data_stats: dict,
+    ) -> None:
+        """Test metadata includes dataset_config_name and split only for huggingface"""
+        config.config["data"]["format"] = "huggingface"
+        config.config["data"]["dataset_config_name"] = "subset_a"
+        config.config["data"]["split"] = "validation"
+
+        writer = ResultWriter(tmp_path, config, datetime.now())
+        metadata = writer._build_metadata(
+            datetime.now(), sample_cache_stats, sample_data_stats
+        )
+
+        assert metadata["data"]["format"] == "huggingface"
+        assert metadata["data"]["dataset_config_name"] == "subset_a"
+        assert metadata["data"]["split"] == "validation"
 
     def test_generate_summary_report(
         self,

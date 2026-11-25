@@ -14,6 +14,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from datasets import load_dataset
@@ -31,6 +32,9 @@ class DataLoader:
         data_format: str = "csv",
         text_column: str = "text",
         label_column: str = "label",
+        dataset_config_name: str | None = None,
+        split: str = "train",
+        token: str | None = None,
     ) -> None:
         """Initialize the data loader
 
@@ -39,10 +43,16 @@ class DataLoader:
             data_format: Data format ("csv", "jsonl", "json", "parquet", "huggingface")
             text_column: Name of the text column
             label_column: Name of the label column
+            dataset_config_name: Optional Hugging Face dataset configuration/subset name
+            split: Hugging Face dataset split to load (default: "train")
+            token: Optional Hugging Face access token
         """
         self.text_column = text_column
         self.label_column = label_column
-        self.data = None
+        self.dataset_config_name = dataset_config_name
+        self.split = split
+        self.token = token
+        self.data: pd.DataFrame | None = None
 
         # Load data (only if data_path is specified)
         if data_path is not None:
@@ -50,6 +60,26 @@ class DataLoader:
                 f"Loading data (data_path={data_path}, data_format={data_format})..."
             )
             self.data = self._load_data(data_path, data_format)
+
+    def _load_huggingface_dataset(self, dataset_name: str) -> pd.DataFrame:
+        """Load a generic Hugging Face dataset as a DataFrame."""
+        if not dataset_name or not dataset_name.strip():
+            raise ValueError(
+                "data_path must specify a non-empty Hugging Face dataset ID."
+            )
+
+        load_kwargs: dict[str, Any] = {"split": self.split}
+        if self.token:
+            load_kwargs["token"] = self.token
+
+        if self.dataset_config_name:
+            dataset = load_dataset(
+                dataset_name, self.dataset_config_name, **load_kwargs
+            )
+        else:
+            dataset = load_dataset(dataset_name, **load_kwargs)
+
+        return dataset.to_pandas()
 
     def _load_data(
         self, data_path: str | Path | None, data_format: str
@@ -63,15 +93,11 @@ class DataLoader:
         Returns:
             DataFrame
         """
-        if data_format == "huggingface":
-            raise ValueError(
-                "Generic Hugging Face datasets are not supported. "
-                "Set data_path to 'swj0419/WikiMIA' or 'iamgroot42/mimir_{domain}_{ngram}' "
-                "to use the dedicated loaders."
-            )
-
         if not data_path:
             raise ValueError("data_path must be provided")
+
+        if data_format == "huggingface":
+            return self._load_huggingface_dataset(str(data_path))
 
         data_path = Path(data_path)
 

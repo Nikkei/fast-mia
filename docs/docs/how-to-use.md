@@ -111,8 +111,10 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 
 | Field | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `data_path` | ✅ | – | Path to a local file or one of the dedicated Hugging Face datasets (`swj0419/WikiMIA` or `iamgroot42/mimir_{domain}_{ngram}`). |
-| `format` | ❌ | `csv` | One of `csv`, `jsonl`, `json`, `parquet`. Use `huggingface` **only** in combination with `swj0419/WikiMIA` or `iamgroot42/mimir_{domain}_{ngram}`. |
+| `data_path` | ✅ | – | Path to a local file, a Hugging Face dataset ID, or one of the dedicated benchmarks (`swj0419/WikiMIA` or `iamgroot42/mimir_{domain}_{ngram}`). |
+| `format` | ❌ | `csv` | One of `csv`, `jsonl`, `json`, `parquet`, `huggingface`. |
+| `dataset_config_name` | ❌ | `null` | Optional Hugging Face dataset configuration/subset name when `format: "huggingface"`. |
+| `split` | ❌ | `"train"` | Hugging Face dataset split when `format: "huggingface"`. |
 | `text_column` | ❌ | `text` | Column containing the raw text to probe. |
 | `label_column` | ❌ | `label` | Column containing membership labels (`1` = member, `0` = non-member). |
 | `text_length` | ❌ | `32` | Number of words kept from each sample. WikiMIA requires one of `32`, `64`, `128`, `256`; MIMIR requires `200`. |
@@ -128,16 +130,18 @@ Omit the entire block if you evaluate the base model. When enabled, the adapter 
 | `jsonl` | `pandas.read_json(data_path, lines=True)` |
 | `json` | `pandas.read_json(data_path)` |
 | `parquet` | `pandas.read_parquet(data_path)` |
-| `huggingface` | Not available for arbitrary datasets. Use only with the dedicated WikiMIA/MIMIR loaders described below. |
+| `huggingface` | `datasets.load_dataset(data_path, dataset_config_name, split=split)` (plus dedicated WikiMIA/MIMIR loaders below). |
 
 #### Supported Hugging Face Datasets
 
-Currently, only the following datasets are supported via the `huggingface` format.
+Any public or gated Hugging Face dataset can be loaded with `format: "huggingface"` by specifying `data_path`, optional `dataset_config_name`, `split` (defaults to `"train"`), `text_column`, and `label_column`. If `HUGGINGFACE_TOKEN` is set in `.env` or the environment, it is forwarded automatically.
+
+In addition, two benchmark datasets have dedicated loaders:
 
 - The [WikiMIA](https://huggingface.co/datasets/swj0419/WikiMIA) dataset is handled specially. If you set `data_path` to "swj0419/WikiMIA", it will be automatically recognized. For this dataset, the data corresponding to the specified text length (32, 64, 128, or 256) will be automatically loaded (e.g., "WikiMIA_length64").
 - The [MIMIR](https://huggingface.co/datasets/iamgroot42/mimir) dataset is handled specially too. If you set `data_path` to "iamgroot42/mimir_{domain}_{ngram}", it will be automatically recognized. For this dataset, the data corresponding to the specified domain and ngram will be automatically loaded (e.g., "iamgroot42/mimir", "pile_cc", "ngram_7_0.2").
 
-**Note**: To use the MIMIR dataset, you need to create a `.env` file in the project root directory with your Hugging Face token. Create a `.env` file with the following content:
+**Note**: To use gated datasets or MIMIR, create a `.env` file in the project root directory with your Hugging Face token:
 
 ```
 HUGGINGFACE_TOKEN=your_huggingface_token_here
