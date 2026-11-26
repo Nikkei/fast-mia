@@ -1,6 +1,7 @@
 import pytest
 from src.methods.factory import MethodFactory
 from src.methods.aeca import AECAMethod
+from src.methods.blind import BlindMethod
 from src.methods.conrecall import CONReCaLLMethod
 from src.methods.dcpdd import DCPDDMethod
 from src.methods.loss import LossMethod
@@ -27,6 +28,7 @@ class TestMethodFactory:
         ("ref", RefMethod, {"reference_model": {"model_id": "dummy"}}),
         ("neighbour", NeighbourMethod, {}),
         ("aeca", AECAMethod, {}),
+        ("blind", BlindMethod, {"features": "tfidf"}),
     ])
     def test_create_method(self, type_, cls, params):
         method = MethodFactory.create_method({"type": type_, "params": params})
