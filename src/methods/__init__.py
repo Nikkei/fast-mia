@@ -14,6 +14,7 @@
 
 from .aeca import AECAMethod
 from .base import BaseMethod
+from .camia import CAMIAMethod
 from .conrecall import CONReCaLLMethod
 from .dcpdd import DCPDDMethod
 from .factory import MethodFactory
@@ -42,4 +43,5 @@ __all__ = [
     "RefMethod",
     "NeighbourMethod",
     "AECAMethod",
+    "CAMIAMethod",
 ]
