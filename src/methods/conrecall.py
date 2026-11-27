@@ -22,7 +22,16 @@ from vllm.outputs import RequestOutput
 from vllm.tokenizers import TokenizerLike
 
 from .base import BaseMethod
-from .prefix_utils import compute_prefix_loss, extract_prefix, process_prefix
+from .prefix_utils import (
+    build_conditional_texts,
+    compute_conditional_prefix_length,
+    compute_prefix_loss,
+    get_bos_token_id,
+    get_separator_token,
+    has_post_prefix_logprobs,
+    process_prefix,
+    select_prefix_candidates,
+)
 
 
 class CONReCaLLMethod(BaseMethod):
@@ -78,21 +87,32 @@ class CONReCaLLMethod(BaseMethod):
         Returns:
             List of CON-ReCaLL scores
         """
-        # Get texts with label 0
+        if not texts:
+            return []
+
+        strip_spaces = bool(
+            data_config and not data_config.get("space_delimited_language", True)
+        )
+        if strip_spaces:
+            texts = [text.replace(" ", "") for text in texts]
+
         member_texts = [
             text for text, label in zip(texts, labels, strict=True) if label == 1
         ]
         nonmembership_texts = [
             text for text, label in zip(texts, labels, strict=True) if label == 0
         ]
-        # Randomly select num_shots texts
-        member_prefix = extract_prefix(member_texts, self.num_shots)
-        nonmember_prefix = extract_prefix(nonmembership_texts, self.num_shots)
 
-        if data_config and not data_config.get("space_delimited_language", True):
-            texts = [text.replace(" ", "") for text in texts]
-            member_prefix = [prefix.replace(" ", "") for prefix in member_prefix]
-            nonmember_prefix = [prefix.replace(" ", "") for prefix in nonmember_prefix]
+        member_prefix = select_prefix_candidates(member_texts, self.num_shots)
+        nonmember_prefix = select_prefix_candidates(nonmembership_texts, self.num_shots)
+        requested_member_shots = (
+            len(member_prefix) if len(set(member_texts)) > 1 else self.num_shots
+        )
+        requested_nonmember_shots = (
+            len(nonmember_prefix)
+            if len(set(nonmembership_texts)) > 1
+            else self.num_shots
+        )
 
         avg_length = int(np.mean([len(tokenizer.encode(text)) for text in texts]))
         processed_member_prefix, processed_member_num_shots = process_prefix(
@@ -101,8 +121,12 @@ class CONReCaLLMethod(BaseMethod):
             member_prefix,
             avg_length,
             self.pass_window,
-            self.num_shots,
+            requested_member_shots,
         )
+        if strip_spaces:
+            processed_member_prefix = [
+                prefix.replace(" ", "") for prefix in processed_member_prefix
+            ]
         if processed_member_num_shots != self.num_shots:
             logging.warning(
                 f"member prefix num_shots was changed: {self.num_shots} -> {processed_member_num_shots}"
@@ -114,47 +138,70 @@ class CONReCaLLMethod(BaseMethod):
             nonmember_prefix,
             avg_length,
             self.pass_window,
-            self.num_shots,
+            requested_nonmember_shots,
         )
+        if strip_spaces:
+            processed_nonmember_prefix = [
+                prefix.replace(" ", "") for prefix in processed_nonmember_prefix
+            ]
         if processed_nonmember_num_shots != self.num_shots:
             logging.warning(
                 f"nonmember prefix num_shots was changed: {self.num_shots} -> {processed_nonmember_num_shots}"
             )
 
+        fallback_indices: set[int] = set()
+
         # calculate unconditional loss
         outputs = self.get_outputs(
             texts, model, sampling_params, lora_request, data_config
         )
-        losses = [self.process_output(output, 0) for output in outputs]
+        losses: list[float] = []
+        for idx, output in enumerate(outputs):
+            if not has_post_prefix_logprobs(output, 0):
+                fallback_indices.add(idx)
+            losses.append(self.process_output(output, 0))
 
-        # prefix [bos] text
-        # If tokenizer.bos_token is None, use ''
-        sep_token = tokenizer.bos_token if tokenizer.bos_token is not None else ""
+        sep_token = get_separator_token(tokenizer)
+        bos_token_id = get_bos_token_id(tokenizer)
 
-        # calculate member prefix conditional loss
-        member_prefix = "".join(processed_member_prefix)
-        member_conditional_texts = [member_prefix + sep_token + text for text in texts]
-        # Calculate the length of the prefix tokens to exclude from loss calculation
-        member_prefix_token_length = tokenizer(
-            member_prefix, return_tensors="pt"
-        ).input_ids.size(1)
+        # calculate member prefix conditional loss without self-reference leakage
+        member_conditional_texts = build_conditional_texts(
+            texts=texts,
+            pool_texts=member_texts,
+            processed_prefix=processed_member_prefix,
+            model=model,
+            tokenizer=tokenizer,
+            avg_length=avg_length,
+            pass_window=self.pass_window,
+            sep_token=sep_token,
+        )
         member_conditional_outputs = self.get_outputs(
             member_conditional_texts, model, sampling_params, lora_request, data_config
         )
-        member_conditional_losses = [
-            self.process_output(output, member_prefix_token_length)
-            for output in member_conditional_outputs
-        ]
+        member_conditional_losses: list[float] = []
+        for idx, (cond_output, uncond_output) in enumerate(
+            zip(member_conditional_outputs, outputs, strict=True)
+        ):
+            prefix_len = compute_conditional_prefix_length(
+                cond_output, uncond_output, bos_token_id
+            )
+            if not has_post_prefix_logprobs(cond_output, prefix_len):
+                fallback_indices.add(idx)
+            member_conditional_losses.append(
+                self.process_output(cond_output, prefix_len)
+            )
 
-        # calculate nonmember prefix conditional loss
-        nonmember_prefix = "".join(processed_nonmember_prefix)
-        nonmember_conditional_texts = [
-            nonmember_prefix + sep_token + text for text in texts
-        ]
-        # Calculate the length of the prefix tokens to exclude from loss calculation
-        nonmember_prefix_token_length = tokenizer(
-            nonmember_prefix, return_tensors="pt"
-        ).input_ids.size(1)
+        # calculate nonmember prefix conditional loss without self-reference leakage
+        nonmember_conditional_texts = build_conditional_texts(
+            texts=texts,
+            pool_texts=nonmembership_texts,
+            processed_prefix=processed_nonmember_prefix,
+            model=model,
+            tokenizer=tokenizer,
+            avg_length=avg_length,
+            pass_window=self.pass_window,
+            sep_token=sep_token,
+        )
         nonmember_conditional_outputs = self.get_outputs(
             nonmember_conditional_texts,
             model,
@@ -162,10 +209,24 @@ class CONReCaLLMethod(BaseMethod):
             lora_request,
             data_config,
         )
-        nonmember_conditional_losses = [
-            self.process_output(output, nonmember_prefix_token_length)
-            for output in nonmember_conditional_outputs
-        ]
+        nonmember_conditional_losses: list[float] = []
+        for idx, (cond_output, uncond_output) in enumerate(
+            zip(nonmember_conditional_outputs, outputs, strict=True)
+        ):
+            prefix_len = compute_conditional_prefix_length(
+                cond_output, uncond_output, bos_token_id
+            )
+            if not has_post_prefix_logprobs(cond_output, prefix_len):
+                fallback_indices.add(idx)
+            nonmember_conditional_losses.append(
+                self.process_output(cond_output, prefix_len)
+            )
+
+        if fallback_indices:
+            logging.warning(
+                f"{self.method_name}: {len(fallback_indices)}/{len(outputs)} sample(s) "
+                "had no valid target token logprobs; fell back to 0.0 loss."
+            )
 
         eps = 1e-10
         scores = [
