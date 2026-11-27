@@ -1,0 +1,49 @@
+# Sample configuration optimized for Google Cloud TPU (v5e / v6e Trillium)
+# Run locally on a TPU VM:
+#   PJRT_DEVICE=TPU XLA_PERSISTENT_CACHE_PATH=$HOME/.cache/xla_compile_cache \
+#     uv run --with 'vllm-tpu' python main.py --config config/tpu-sample.yaml --detailed-report
+# Or submit remotely via:
+#   ./gcp/submit_tpu_job.sh --config config/tpu-sample.yaml --bucket gs://your-bucket/fast-mia-results
+
+model:
+  model_id: "Qwen/Qwen2.5-0.5B-Instruct"
+  dtype: "bfloat16"          # Native Cloud TPU MXU precision
+  max_model_len: 512         # Fixed context bound reduces XLA graph compilation buckets
+  max_num_seqs: 32           # Batch multiple prompts per TPU step
+  tensor_parallel_size: 1    # Set to 4 or 8 for v5litepod-4 / v6e-4 / v6e-8
+  trust_remote_code: true
+  enable_lora: false
+
+sampling_parameters:
+  max_tokens: 1
+  prompt_logprobs: 0
+  temperature: 0.0
+  top_p: 1.0
+
+data:
+  data_path: "./data/sample_data.csv"
+  format: "csv"
+  text_column: "input"
+  label_column: "label"
+  text_length: 32
+  space_delimited_language: true
+
+methods:
+  - type: "loss"
+    params: {}
+  - type: "zlib"
+    params: {}
+  - type: "mink"
+    params:
+      ratio: 0.2
+  - type: "lower"
+    params: {}
+  # Optional: Neighbour with fixed-shape XLA batching
+  # - type: "neighbour"
+  #   params:
+  #     search_model_id: "bert-base-uncased"
+  #     num_neighbours: 50
+  #     batch_size: 32
+  #     pad_to_batch_size: true
+
+output_dir: "./results"
