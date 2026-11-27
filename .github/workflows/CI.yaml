@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-oss
     timeout-minutes: 3
     steps:
       - name: Checkout
