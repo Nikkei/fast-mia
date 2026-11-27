@@ -1,16 +1,20 @@
 import pytest
 from src.methods.factory import MethodFactory
 from src.methods.aeca import AECAMethod
+from src.methods.blind import BlindMethod
+from src.methods.camia import CAMIAMethod
 from src.methods.conrecall import CONReCaLLMethod
 from src.methods.dcpdd import DCPDDMethod
 from src.methods.loss import LossMethod
 from src.methods.lower import LowerMethod
 from src.methods.mink import MinKMethod
+from src.methods.minkpp import MinKPPMethod
 from src.methods.neighbour import NeighbourMethod
 from src.methods.pac import PACMethod
 from src.methods.recall import ReCaLLMethod
 from src.methods.ref import RefMethod
 from src.methods.samia import SaMIAMethod
+from src.methods.surp import SURPMethod
 from src.methods.zlib import ZlibMethod
 
 class TestMethodFactory:
@@ -27,6 +31,10 @@ class TestMethodFactory:
         ("ref", RefMethod, {"reference_model": {"model_id": "dummy"}}),
         ("neighbour", NeighbourMethod, {}),
         ("aeca", AECAMethod, {}),
+        ("camia", CAMIAMethod, {}),
+        ("surp", SURPMethod, {}),
+        ("minkpp", MinKPPMethod, {}),
+        ("blind", BlindMethod, {}),
     ])
     def test_create_method(self, type_, cls, params):
         method = MethodFactory.create_method({"type": type_, "params": params})
