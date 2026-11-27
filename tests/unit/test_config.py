@@ -107,3 +107,91 @@ class TestConfig:
             # Delete file after test
             if os.path.exists(empty_config_path):
                 os.remove(empty_config_path)
+
+    def test_warns_on_unknown_keys_and_typos(self, tmp_path: Path, caplog):
+        cfg_file = tmp_path / "typo.yaml"
+        cfg_file.write_text(
+            yaml.safe_dump(
+                {
+                    "model": {"model_id": "gpt2"},
+                    "sampling_params": {"temperature": 0.0},
+                    "data": {
+                        "data_path": "./data/sample.csv",
+                        "token_length": 64,
+                    },
+                    "methods": [{"type": "loss", "parameters": {}}],
+                }
+            )
+        )
+        with caplog.at_level("WARNING"):
+            Config(cfg_file)
+
+        messages = "\n".join(r.message for r in caplog.records)
+        assert "sampling_params" in messages
+        assert "sampling_parameters" in messages
+        assert "token_length" in messages
+        assert "text_length" in messages
+        assert "parameters" in messages
+
+    def test_validate_succeeds_for_valid_config(self):
+        config = Config(get_fixture_path("valid_config.yaml"))
+        config.validate()
+
+    def test_validate_raises_on_missing_model_id(self, tmp_path: Path):
+        cfg_file = tmp_path / "missing_model.yaml"
+        cfg_file.write_text(
+            yaml.safe_dump(
+                {
+                    "data": {"data_path": "./data/sample.csv"},
+                    "methods": [{"type": "loss"}],
+                }
+            )
+        )
+        config = Config(cfg_file)
+        with pytest.raises(ValueError, match="model.model_id"):
+            config.validate()
+
+    def test_validate_raises_on_missing_data_path(self, tmp_path: Path):
+        cfg_file = tmp_path / "missing_data.yaml"
+        cfg_file.write_text(
+            yaml.safe_dump(
+                {
+                    "model": {"model_id": "gpt2"},
+                    "data": {},
+                    "methods": [{"type": "loss"}],
+                }
+            )
+        )
+        config = Config(cfg_file)
+        with pytest.raises(ValueError, match="data.data_path"):
+            config.validate()
+
+    def test_validate_raises_on_invalid_text_length(self, tmp_path: Path):
+        cfg_file = tmp_path / "bad_length.yaml"
+        cfg_file.write_text(
+            yaml.safe_dump(
+                {
+                    "model": {"model_id": "gpt2"},
+                    "data": {"data_path": "./data/sample.csv", "text_length": -5},
+                    "methods": [{"type": "loss"}],
+                }
+            )
+        )
+        config = Config(cfg_file)
+        with pytest.raises(ValueError, match="data.text_length"):
+            config.validate()
+
+    def test_validate_raises_on_empty_methods(self, tmp_path: Path):
+        cfg_file = tmp_path / "empty_methods.yaml"
+        cfg_file.write_text(
+            yaml.safe_dump(
+                {
+                    "model": {"model_id": "gpt2"},
+                    "data": {"data_path": "./data/sample.csv"},
+                    "methods": [],
+                }
+            )
+        )
+        config = Config(cfg_file)
+        with pytest.raises(ValueError, match="methods"):
+            config.validate()

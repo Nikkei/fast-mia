@@ -87,17 +87,63 @@ class TestEvaluator:
         # Check EvaluationResult structure
         assert isinstance(result, EvaluationResult)
         assert isinstance(result.results_df, pd.DataFrame)
-        assert set(result.results_df.columns) == {"method", "auroc", "fpr95", "tpr05"}
+        assert set(result.results_df.columns) == {
+            "method",
+            "auroc",
+            "fpr95",
+            "tpr05",
+            "tpr01",
+            "elapsed_seconds",
+            "cache_hits",
+            "cache_misses",
+        }
         assert list(result.results_df["method"]) == ["loss", "zlib"]
         # Check that metric values are raw floats in [0, 1]
-        for col in ["auroc", "fpr95", "tpr05"]:
+        for col in ["auroc", "fpr95", "tpr05", "tpr01"]:
             for val in result.results_df[col]:
                 assert isinstance(val, float) and (math.isnan(val) or 0.0 <= val <= 1.0)
+        for val in result.results_df["elapsed_seconds"]:
+            assert isinstance(val, float) and val >= 0.0
         # Check detailed_results
         assert len(result.detailed_results) == 2
         assert result.detailed_results[0]["method_name"] == "loss"
+        assert "elapsed_seconds" in result.detailed_results[0]
+        assert "cache_hits" in result.detailed_results[0]
+        assert "cache_misses" in result.detailed_results[0]
+        assert "per_method" not in result.cache_stats
         # Check data_stats
         assert result.data_stats["num_samples"] == 4
+
+    def test_evaluate_cache_deltas_tracked_per_method(
+        self, config, mock_data_loader, mock_model_loader
+    ):
+        from src.methods.base import BaseMethod
+
+        BaseMethod.clear_cache()
+
+        method1 = mock.MagicMock()
+        method1.method_name = "loss"
+
+        def run_miss(**kwargs):
+            BaseMethod._cache_stats["model_misses"] += 1
+            return [0.9, 0.1, 0.8, 0.2]
+
+        method1.run.side_effect = run_miss
+
+        method2 = mock.MagicMock()
+        method2.method_name = "zlib"
+
+        def run_hit(**kwargs):
+            BaseMethod._cache_stats["model_hits"] += 1
+            return [0.8, 0.2, 0.7, 0.3]
+
+        method2.run.side_effect = run_hit
+
+        evaluator = Evaluator(mock_data_loader, mock_model_loader, [method1, method2])
+        result = evaluator.evaluate(config)
+
+        assert list(result.results_df["cache_misses"]) == [1, 0]
+        assert list(result.results_df["cache_hits"]) == [0, 1]
 
     def test_evaluate_metrics_correctness(self, config, mock_data_loader, mock_model_loader):
         # Check that when one method has perfect score and label match
@@ -108,6 +154,7 @@ class TestEvaluator:
         result = evaluator.evaluate(config)
         # AUROCが100%になること
         assert result.results_df.loc[0, "auroc"] == 1.0
+        assert result.results_df.loc[0, "tpr01"] == 1.0
 
     def test_evaluate_multiple_methods(self, config, mock_data_loader, mock_model_loader):
         # Check that multiple method results are correctly aggregated
@@ -139,7 +186,7 @@ class TestEvaluator:
         ]
         assert set(result.results_df["method"]) == set(expected_methods)
         # Check that metric values are raw floats in [0, 1]
-        for col in ["auroc", "fpr95", "tpr05"]:
+        for col in ["auroc", "fpr95", "tpr05", "tpr01"]:
             for val in result.results_df[col]:
                 assert isinstance(val, float) and (math.isnan(val) or 0.0 <= val <= 1.0)
 
@@ -148,28 +195,31 @@ class TestMetrics:
         # Check that when all scores are perfectly separated
         scores = [1, 0, 1, 0]
         labels = [1, 0, 1, 0]
-        auroc, fpr95, tpr05 = get_metrics(scores, labels)
+        auroc, fpr95, tpr05, tpr01 = get_metrics(scores, labels)
         assert auroc == 1.0
-        # Since all scores are perfectly separated, FPR95=0, TPR05=1
+        # Since all scores are perfectly separated, FPR95=0, TPR05=1, TPR01=1
         assert fpr95 == 0.0
         assert tpr05 == 1.0
+        assert tpr01 == 1.0
 
     def test_get_metrics_random(self):
         # Check that when scores are random
         scores = [0.1, 0.4, 0.35, 0.8]
         labels = [0, 0, 1, 1]
-        auroc, fpr95, tpr05 = get_metrics(scores, labels)
+        auroc, fpr95, tpr05, tpr01 = get_metrics(scores, labels)
         # AUROC is 0.75 (same as sklearn example)
         assert abs(auroc - 0.75) < 1e-6
-        # FPR95, TPR05 are in the range 0<=x<=1
+        # FPR95, TPR05, TPR01 are in the range 0<=x<=1
         assert 0.0 <= fpr95 <= 1.0
         assert 0.0 <= tpr05 <= 1.0
+        assert 0.0 <= tpr01 <= 1.0
 
     def test_get_metrics_all_same_label(self):
         # Check that when all labels are the same (nan)
         scores = [0.1, 0.2, 0.3, 0.4]
         labels = [1, 1, 1, 1]
-        auroc, fpr95, tpr05 = get_metrics(scores, labels)
+        auroc, fpr95, tpr05, tpr01 = get_metrics(scores, labels)
         assert math.isnan(auroc)
         assert math.isnan(fpr95)
         assert math.isnan(tpr05)
+        assert math.isnan(tpr01)

@@ -255,3 +255,69 @@ class TestResultWriter:
 
         for path in paths.values():
             assert path.exists()
+
+    def test_metadata_and_report_include_timing_cache_and_tpr01(
+        self,
+        tmp_path: Path,
+        config: Config,
+        sample_labels: list[int],
+        sample_cache_stats: dict,
+        sample_data_stats: dict,
+    ) -> None:
+        results_df = pd.DataFrame(
+            {
+                "method": ["loss", "zlib"],
+                "auroc": [0.80, 0.70],
+                "fpr95": [0.30, 0.45],
+                "tpr05": [0.40, 0.25],
+                "tpr01": [0.20, 0.10],
+                "elapsed_seconds": [1.5, 0.25],
+                "cache_hits": [0, 1],
+                "cache_misses": [1, 0],
+            }
+        )
+        detailed_results = [
+            {
+                "method_name": "loss",
+                "auroc": 0.80,
+                "fpr95": 0.30,
+                "tpr05": 0.40,
+                "tpr01": 0.20,
+                "elapsed_seconds": 1.5,
+                "cache_hits": 0,
+                "cache_misses": 1,
+                "scores": [0.9, 0.8, 0.2, 0.1],
+            },
+            {
+                "method_name": "zlib",
+                "auroc": 0.70,
+                "fpr95": 0.45,
+                "tpr05": 0.25,
+                "tpr01": 0.10,
+                "elapsed_seconds": 0.25,
+                "cache_hits": 1,
+                "cache_misses": 0,
+                "scores": [0.8, 0.7, 0.3, 0.2],
+            },
+        ]
+        writer = ResultWriter(tmp_path, config, datetime.now())
+        paths = writer.save_all(
+            results_df=results_df,
+            results=detailed_results,
+            labels=sample_labels,
+            cache_stats=sample_cache_stats,
+            data_stats=sample_data_stats,
+            end_time=datetime.now(),
+        )
+
+        metadata = json.loads(paths["metadata"].read_text())
+        assert "per_method" not in metadata["cache"]
+        assert len(metadata["method_stats"]) == 2
+        assert metadata["method_stats"][0]["method_name"] == "loss"
+        assert metadata["method_stats"][0]["elapsed_seconds"] == 1.5
+        assert metadata["method_stats"][1]["cache_hits"] == 1
+
+        report_text = paths["report"].read_text()
+        assert "TIMING & CACHE SUMMARY" in report_text
+        assert "first cache miss pays the inference cost" in report_text
+        assert "Best TPR@1%FPR: loss (0.200)" in report_text

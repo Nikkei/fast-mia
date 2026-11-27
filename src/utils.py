@@ -20,11 +20,11 @@ import torch
 from sklearn.metrics import auc, roc_curve
 from transformers import set_seed
 
-METRIC_COLUMNS = ("auroc", "fpr95", "tpr05")
+METRIC_COLUMNS = ("auroc", "fpr95", "tpr05", "tpr01")
 
 
 def format_results_df(results_df: pd.DataFrame) -> pd.DataFrame:
-    """Format raw metric values as percentage strings for display
+    """Format raw metric and timing values for human-readable display
 
     Args:
         results_df: DataFrame with raw metric values
@@ -38,6 +38,10 @@ def format_results_df(results_df: pd.DataFrame) -> pd.DataFrame:
             formatted_df[column] = formatted_df[column].map(
                 lambda value: f"{value:.1%}"
             )
+    if "elapsed_seconds" in formatted_df.columns:
+        formatted_df["elapsed_seconds"] = formatted_df["elapsed_seconds"].map(
+            lambda value: f"{value:.2f}s"
+        )
     return formatted_df
 
 
@@ -53,7 +57,9 @@ def fix_seed(seed: int = 0) -> None:
     set_seed(seed)
 
 
-def get_metrics(scores: list[float], labels: list[int]) -> tuple[float, float, float]:
+def get_metrics(
+    scores: list[float], labels: list[int]
+) -> tuple[float, float, float, float]:
     """Calculate evaluation metrics
 
     Args:
@@ -64,18 +70,23 @@ def get_metrics(scores: list[float], labels: list[int]) -> tuple[float, float, f
         auroc: AUROC
         fpr95: FPR when TPR is 95%
         tpr05: TPR when FPR is 5%
+        tpr01: TPR when FPR is 1%
     """
     # If only one class is present in labels, metrics are undefined
     if len(set(labels)) < 2:
-        return float("nan"), float("nan"), float("nan")
-    fpr_list, tpr_list, thresholds = roc_curve(labels, scores)
-    auroc = auc(fpr_list, tpr_list)
+        return float("nan"), float("nan"), float("nan"), float("nan")
+    fpr_list, tpr_list, _ = roc_curve(labels, scores)
+    auroc = float(auc(fpr_list, tpr_list))
     try:
-        fpr95 = fpr_list[np.where(tpr_list >= 0.95)[0][0]]
+        fpr95 = float(fpr_list[np.where(tpr_list >= 0.95)[0][0]])
     except IndexError:
         fpr95 = float("nan")
     try:
-        tpr05 = tpr_list[np.where(fpr_list <= 0.05)[0][-1]]
+        tpr05 = float(tpr_list[np.where(fpr_list <= 0.05)[0][-1]])
     except IndexError:
         tpr05 = float("nan")
-    return auroc, fpr95, tpr05
+    try:
+        tpr01 = float(tpr_list[np.where(fpr_list <= 0.01)[0][-1]])
+    except IndexError:
+        tpr01 = float("nan")
+    return auroc, fpr95, tpr05, tpr01

@@ -57,3 +57,32 @@ class TestMethodFactory:
         ]
         methods = MethodFactory.create_methods(configs)
         assert [type(m) for m in methods] == [LossMethod, RefMethod]
+
+    def test_custom_method_name(self):
+        method = MethodFactory.create_method(
+            {"type": "recall", "name": "recall_3shot", "params": {"num_shots": 3}}
+        )
+        assert method.method_name == "recall_3shot"
+
+    def test_empty_custom_method_name_raises(self):
+        with pytest.raises(ValueError, match="non-empty string"):
+            MethodFactory.create_method({"type": "loss", "name": "   "})
+
+    def test_disambiguates_duplicate_methods_by_params(self):
+        configs = [
+            {"type": "recall", "params": {"num_shots": 3}},
+            {"type": "recall", "params": {"num_shots": 10}},
+        ]
+        methods = MethodFactory.create_methods(configs)
+        names = [m.method_name for m in methods]
+        assert len(set(names)) == 2
+        assert names == ["recall_num_shots=3", "recall_num_shots=10"]
+
+    def test_disambiguates_identical_duplicate_methods_with_index(self):
+        configs = [
+            {"type": "loss", "params": {}},
+            {"type": "loss", "params": {}},
+        ]
+        methods = MethodFactory.create_methods(configs)
+        names = [m.method_name for m in methods]
+        assert names == ["loss_1", "loss_2"]

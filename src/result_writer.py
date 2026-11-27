@@ -82,6 +82,7 @@ class ResultWriter:
         end_time: datetime,
         cache_stats: dict[str, Any],
         data_stats: dict[str, Any],
+        results: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Build metadata dictionary
 
@@ -89,6 +90,7 @@ class ResultWriter:
             end_time: Experiment end time
             cache_stats: Cache statistics from evaluator
             data_stats: Data statistics (num_samples, num_members, etc.)
+            results: Optional detailed per-method results
 
         Returns:
             Metadata dictionary
@@ -96,7 +98,23 @@ class ResultWriter:
         duration = end_time - self.start_time
         git_info = _get_git_info()
 
-        metadata = {
+        method_stats: list[dict[str, Any]] = []
+        if results:
+            for item in results:
+                if any(
+                    key in item
+                    for key in ("elapsed_seconds", "cache_hits", "cache_misses")
+                ):
+                    method_stats.append(
+                        {
+                            "method_name": item.get("method_name"),
+                            "elapsed_seconds": item.get("elapsed_seconds"),
+                            "cache_hits": item.get("cache_hits"),
+                            "cache_misses": item.get("cache_misses"),
+                        }
+                    )
+
+        metadata: dict[str, Any] = {
             "experiment": {
                 "start_time": self.start_time.isoformat(),
                 "end_time": end_time.isoformat(),
@@ -125,6 +143,7 @@ class ResultWriter:
             "sampling_parameters": self.config.sampling_parameters,
             "methods": self.config.methods,
             "cache": cache_stats,
+            "method_stats": method_stats,
         }
 
         if self.config.lora:
@@ -137,6 +156,7 @@ class ResultWriter:
         end_time: datetime,
         cache_stats: dict[str, Any],
         data_stats: dict[str, Any],
+        results: list[dict[str, Any]] | None = None,
     ) -> Path:
         """Save experiment metadata as JSON and YAML
 
@@ -144,11 +164,14 @@ class ResultWriter:
             end_time: Experiment end time
             cache_stats: Cache statistics
             data_stats: Data statistics
+            results: Optional detailed per-method results
 
         Returns:
             Path to saved metadata file
         """
-        metadata = self._build_metadata(end_time, cache_stats, data_stats)
+        metadata = self._build_metadata(
+            end_time, cache_stats, data_stats, results=results
+        )
 
         json_path = self.run_dir / "metadata.json"
         with json_path.open("w") as f:
@@ -262,13 +285,15 @@ class ResultWriter:
 
         for method_config in self.config.methods:
             method_type = method_config.get("type", "unknown")
+            custom_name = method_config.get("name")
+            label = f"{custom_name} ({method_type})" if custom_name else method_type
             params = method_config.get("params", {})
             params_str = (
                 ", ".join(f"{k}={v}" for k, v in params.items())
                 if params
                 else "default"
             )
-            lines.append(f"  - {method_type}: {params_str}")
+            lines.append(f"  - {label}: {params_str}")
 
         lines.extend(
             [
@@ -278,6 +303,37 @@ class ResultWriter:
                 "-" * 60,
                 "",
                 format_results_df(results_df).to_string(index=False),
+            ]
+        )
+
+        timed_results = [
+            r
+            for r in results
+            if any(k in r for k in ("elapsed_seconds", "cache_hits", "cache_misses"))
+        ]
+        if timed_results:
+            lines.extend(
+                [
+                    "",
+                    "-" * 60,
+                    "TIMING & CACHE SUMMARY",
+                    "-" * 60,
+                    "Note: Model outputs are cached across methods, so elapsed time depends",
+                    "on execution order (the first cache miss pays the inference cost).",
+                ]
+            )
+            for item in timed_results:
+                elapsed = item.get("elapsed_seconds")
+                elapsed_str = f"{elapsed:.2f}s" if isinstance(elapsed, float) else "N/A"
+                hits = item.get("cache_hits", 0)
+                misses = item.get("cache_misses", 0)
+                lines.append(
+                    f"  - {item['method_name']}: {elapsed_str} "
+                    f"(cache hits={hits}, misses={misses})"
+                )
+
+        lines.extend(
+            [
                 "",
                 "-" * 60,
                 "BEST PERFORMERS",
@@ -310,6 +366,16 @@ class ResultWriter:
             if best_tpr05:
                 lines.append(
                     f"Best TPR@5%FPR: {best_tpr05['method_name']} ({best_tpr05['tpr05']:.3f})"
+                )
+
+            best_tpr01 = max(
+                [r for r in valid_results if "tpr01" in r and not pd.isna(r["tpr01"])],
+                key=lambda x: x["tpr01"],
+                default=None,
+            )
+            if best_tpr01:
+                lines.append(
+                    f"Best TPR@1%FPR: {best_tpr01['method_name']} ({best_tpr01['tpr01']:.3f})"
                 )
 
         lines.extend(
@@ -386,7 +452,9 @@ class ResultWriter:
         paths["config"] = self.copy_config()
         paths["results_csv"] = self.save_results_csv(results_df)
         paths["detailed_scores"] = self.save_detailed_scores(results, labels)
-        paths["metadata"] = self.save_metadata(end_time, cache_stats, data_stats)
+        paths["metadata"] = self.save_metadata(
+            end_time, cache_stats, data_stats, results=results
+        )
         paths["report"] = self.generate_summary_report(results_df, results, data_stats)
 
         return paths
