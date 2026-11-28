@@ -36,6 +36,7 @@ The identifier is the name used in this framework's configuration.
 || **PPL/zlib** (`zlib`) | Uses the ratio of information content calculated by Zlib compression |
 || **Ref** (`ref`) | Uses the difference in loss between the target model and a reference model |
 | Token distribution | **Min-K% Prob** (`mink`) | https://github.com/swj0419/detect-pretrain-code |
+|| **Min-K%++** (`minkpp`) | https://github.com/zjysteven/mink-plus-plus |
 || **DC-PDD** (`dcpdd`) | https://github.com/zhang-wei-chao/DC-PDD |
 || **AECA** (`aeca`) | https://github.com/kecy03/AECA |
 | Text alternation | **Lowercase** (`lower`) | Uses the ratio of loss after lowercasing the text |

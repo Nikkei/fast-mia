@@ -20,6 +20,7 @@ from .factory import MethodFactory
 from .loss import LossMethod
 from .lower import LowerMethod
 from .mink import MinKMethod
+from .minkpp import MinKPPMethod
 from .neighbour import NeighbourMethod
 from .pac import PACMethod
 from .recall import ReCaLLMethod
@@ -32,6 +33,7 @@ __all__ = [
     "LossMethod",
     "ZlibMethod",
     "MinKMethod",
+    "MinKPPMethod",
     "MethodFactory",
     "ReCaLLMethod",
     "LowerMethod",

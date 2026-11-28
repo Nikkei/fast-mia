@@ -6,6 +6,7 @@ from src.methods.dcpdd import DCPDDMethod
 from src.methods.loss import LossMethod
 from src.methods.lower import LowerMethod
 from src.methods.mink import MinKMethod
+from src.methods.minkpp import MinKPPMethod
 from src.methods.neighbour import NeighbourMethod
 from src.methods.pac import PACMethod
 from src.methods.recall import ReCaLLMethod
@@ -19,6 +20,7 @@ class TestMethodFactory:
         ("lower", LowerMethod, {}),
         ("zlib", ZlibMethod, {}),
         ("mink", MinKMethod, {"ratio": 0.1}),
+        ("minkpp", MinKPPMethod, {"ratio": 0.2, "top_k": 10}),
         ("pac", PACMethod, {"alpha": 0.2, "N": 3}),
         ("recall", ReCaLLMethod, {"num_shots": 5}),
         ("samia", SaMIAMethod, {"num_samples": 3}),
